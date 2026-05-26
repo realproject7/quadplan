@@ -84,7 +84,7 @@ const COPY = {
     },
     launchStep: {
       title: "Ready to launch",
-      desc: "Everything is configured. Review the summary and launch your AI dev team.",
+      desc: "Everything is configured. Review the summary and launch your planning team.",
       teamRoster: "Team Roster",
       redirecting: "Project saved. Redirecting to dashboard...",
       launching: "Launching...",
@@ -105,8 +105,8 @@ const COPY = {
     redirectingToDashboard: "Redirecting to project dashboard...",
   },
   ko: {
-    title: "AI 개발 팀 설정하기",
-    subtitle: "에이전트를 설정하고, 저장소를 연결하고, 몇 분 안에 멀티 에이전트 개발 워크플로우를 시작하세요.",
+    title: "기획 팀 설정하기",
+    subtitle: "에이전트를 설정하고, 저장소를 연결하고, 몇 분 안에 멀티 에이전트 기획 워크플로우를 시작하세요.",
     steps: {
       name: { label: "프로젝트 이름", subtitle: "프로젝트 이름 정하기" },
       repo: { label: "GitHub 저장소", subtitle: "저장소 연결하기" },
@@ -163,7 +163,7 @@ const COPY = {
     },
     launchStep: {
       title: "실행 준비 완료",
-      desc: "모든 설정이 끝났습니다. 요약을 확인하고 AI 개발 팀을 시작하세요.",
+      desc: "모든 설정이 끝났습니다. 요약을 확인하고 기획 팀을 시작하세요.",
       teamRoster: "팀 구성",
       redirecting: "프로젝트를 저장했습니다. 대시보드로 이동 중...",
       launching: "실행 중...",
