@@ -1,0 +1,730 @@
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import ProjectChatEmptyState from "./ProjectChatEmptyState";
+import ChatPresets from "./ChatPresets";
+
+interface Attachment {
+  path: string;
+  name: string;
+}
+
+interface Message {
+  id: number;
+  sender: string;
+  text: string;
+  time: string;
+  channel: string;
+  type?: string;
+  attachments?: Attachment[];
+}
+
+const SENDER_COLORS: Record<string, string> = {
+  head: "#00ff88",
+  re1: "#4488ff",
+  re2: "#cc44ff",
+  dev: "#ffcc00",
+  user: "#e0e0e0",
+  system: "#737373",
+};
+
+const AGENTS = ["head", "re1", "re2", "dev", "user"];
+
+// #519: system/status message filter patterns — reuses the same set
+// from the bridge noise filter (#501 / PR #504).
+const SYSTEM_PATTERNS = [
+  /^.+ is online$/,
+  /disconnected \(timeout\)/,
+  /^.+ disconnected$/,
+  /auto-recovered/,
+  /Resuming agent conversation/,
+  /Loop guard:/,
+];
+
+function isSystemMessage(msg: Message): boolean {
+  if (msg.sender === "system") return true;
+  if (msg.type === "join" || msg.type === "leave") return true;
+  for (const pat of SYSTEM_PATTERNS) {
+    if (pat.test(msg.text)) return true;
+  }
+  return false;
+}
+
+// #410 / quadwork#276: slash commands recognized by AgentChattr's
+// native UI (mirrors agentchattr/static/chat.js lines 1978-1989).
+// Typing `/` in the chat input opens an autocomplete menu of these.
+const SLASH_COMMANDS: { command: string; description: string }[] = [
+  { command: "/artchallenge", description: "SVG art challenge — all agents create artwork (optional theme)" },
+  { command: "/hatmaking", description: "All agents design a hat to wear on their avatar" },
+  { command: "/roastreview", description: "Get all agents to review and roast each other's work" },
+  { command: "/poetry haiku", description: "Agents write a haiku about the codebase" },
+  { command: "/poetry limerick", description: "Agents write a limerick about the codebase" },
+  { command: "/poetry sonnet", description: "Agents write a sonnet about the codebase" },
+  { command: "/summary", description: "Summarize recent messages — tag an agent (e.g. /summary @head)" },
+  { command: "/continue", description: "Resume after loop guard pauses" },
+  { command: "/clear", description: "Clear messages in current channel" },
+];
+
+function senderColor(sender: string): string {
+  return SENDER_COLORS[sender.toLowerCase()] || "#e0e0e0";
+}
+
+// #398 / quadwork#263: uppercase reviewer short names for the chat
+// sender column. The backend now serves `re1`/`re2` directly.
+function senderLabel(sender: string): string {
+  const s = sender.toLowerCase();
+  if (s === "re1") return "RE1";
+  if (s === "re2") return "RE2";
+  return sender;
+}
+
+// #408 / quadwork#271: render @mentions of known agents as colored
+// pills. Only the four agent IDs + "user" qualify; unknown handles
+// stay as plain text. The mention must be preceded by start-of-string
+// or whitespace so URL fragments like "https://github.com/@user"
+// don't accidentally pillify, AND must be followed by something that
+// can't continue a handle (no word char, no hyphen) so longer
+// hyphenated handles like "@user-name" or "@head-2" don't pill the
+// known prefix and leave the rest as plain text.
+const MENTION_RE = /(^|\s)(@(?:head|dev|re1|re2|user))(?![\w-])/gi;
+function renderMessageWithMentions(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  for (const match of text.matchAll(MENTION_RE)) {
+    const fullStart = match.index ?? 0;
+    const lead = match[1];
+    const mention = match[2];
+    const mentionStart = fullStart + lead.length;
+    if (mentionStart > last) {
+      parts.push(text.slice(last, mentionStart));
+    }
+    const agentId = mention.slice(1).toLowerCase();
+    const color = senderColor(agentId);
+    parts.push(
+      <span
+        key={`m${key++}`}
+        className="inline-block px-1 py-0 rounded font-mono"
+        style={{ backgroundColor: `${color}22`, color }}
+      >
+        {mention}
+      </span>,
+    );
+    last = mentionStart + mention.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length > 0 ? parts : [text];
+}
+
+/**
+ * #415: Use the API-driven chat panel directly. The earlier iframe
+ * approach embedded AC's own web UI but its internal chat.js has its
+ * own empty-state / welcome screen that QuadWork can't control,
+ * causing "Ready when you are" to persist over existing messages.
+ * The API panel (ChatPanelAPI) has full feature parity — mentions,
+ * slash commands, replies, auto-scroll, IME — and correctly gates
+ * the welcome screen behind the initial history fetch (#410).
+ */
+interface ChatPanelProps {
+  projectId?: string;
+  /** #523: filter state lifted to parent so toggle renders in PanelHeader */
+  filterSystem?: boolean;
+}
+
+export default function ChatPanel({ projectId, filterSystem }: ChatPanelProps) {
+  return <ChatPanelAPI projectId={projectId} filterSystem={filterSystem} />;
+}
+
+/** API-driven fallback when iframe is blocked */
+function ChatPanelAPI({ projectId, filterSystem = false }: { projectId?: string; filterSystem?: boolean }) {
+  const channel = "general";
+  const [messages, setMessages] = useState<Message[]>([]);
+  // #410: track whether the initial fetch has completed so we don't
+  // flash the welcome/empty state while messages are still loading.
+  // #436: only set loaded after a SUCCESSFUL fetch — errors during
+  // startup must not flip this flag or the welcome screen appears
+  // over existing messages that haven't been fetched yet.
+  const [loaded, setLoaded] = useState(false);
+  const [input, setInput] = useState("");
+  // #436: retry counter for the initial fetch. On startup AC may not
+  // be ready for 2-3 seconds; we retry up to 3 times (2s apart)
+  // before giving up. Once the first successful fetch completes
+  // (messages or genuine empty), retries stop.
+  const initialRetryRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const MAX_INITIAL_RETRIES = 3;
+  const INITIAL_RETRY_DELAY_MS = 2000;
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState("");
+  // #410 / quadwork#276: slash command autocomplete menu state.
+  // Opens whenever the input *starts* with `/` and there's no later
+  // space (so `/poetry hai` still matches but `/clear extra` exits
+  // back to free-typed mode).
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  // #410 / quadwork#276: keyboard selection index into the
+  // currently-filtered slash menu. ArrowUp/Down move it, Enter
+  // commits the active row instead of sending the partial buffer.
+  const [slashIndex, setSlashIndex] = useState(0);
+  const [authError, setAuthError] = useState<string | null>(null);
+  // #397 / quadwork#262: tracks the message the next send will be a
+  // threaded reply to. Cleared after a successful send or on cancel.
+  const [replyTo, setReplyTo] = useState<{ id: number; sender: string } | null>(null);
+  const cursorRef = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // #344: IME composition guard — Korean/Japanese candidate
+  // selection ends with an Enter keystroke that must NOT submit
+  // the message. React synthesizes keydown BEFORE the composition
+  // flags flip, so we track a ref alongside the element's own
+  // isComposing flag and check both in the Enter handler.
+  const isComposingRef = useRef(false);
+  const shouldAutoScroll = useRef(true);
+  const authRetryRef = useRef(0);
+
+  // Reset cursor when project changes
+  useEffect(() => {
+    cursorRef.current = 0;
+    setMessages([]);
+    setLoaded(false);
+    initialRetryRef.current = 0;
+    if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
+  }, [projectId]);
+
+  // Poll messages via proxy
+  const fetchMessages = useCallback(() => {
+    const url = `/api/chat?path=/api/messages&channel=${encodeURIComponent(channel)}&cursor=${cursorRef.current}${projectId ? `&project=${encodeURIComponent(projectId)}` : ""}`;
+    fetch(url)
+      .then((r) => {
+        if (r.status === 403) {
+          if (authRetryRef.current < 3) setAuthError(null);
+          else setAuthError("Chat authentication failed (403). Check project chat configuration in Settings.");
+          throw new Error("auth failed");
+        }
+        if (!r.ok) throw new Error(`Poll failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        setAuthError(null);
+        const msgs: Message[] = Array.isArray(data) ? data : data.messages || [];
+        if (msgs.length > 0) {
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newMsgs = msgs.filter((m) => !existingIds.has(m.id));
+            return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
+          });
+          const maxId = Math.max(...msgs.map((m) => m.id));
+          if (maxId > cursorRef.current) cursorRef.current = maxId;
+        }
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (!loaded && initialRetryRef.current < MAX_INITIAL_RETRIES) {
+          initialRetryRef.current += 1;
+          retryTimerRef.current = setTimeout(fetchMessages, INITIAL_RETRY_DELAY_MS);
+        }
+      });
+  }, [channel, projectId, loaded]);
+
+  useEffect(() => {
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 3000);
+    return () => {
+      clearInterval(interval);
+      if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
+    };
+  }, [fetchMessages]);
+
+  // Auto-scroll
+  useEffect(() => {
+    if (shouldAutoScroll.current && listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleScroll = () => {
+    if (!listRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+    shouldAutoScroll.current = scrollHeight - scrollTop - clientHeight < 40;
+  };
+
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  // #466: image attachments — pending uploads for the current message
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadFile = async (file: File) => {
+    if (!projectId) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const r = await fetch(`/api/upload?project=${encodeURIComponent(projectId)}`, {
+        method: "POST",
+        body: form,
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({ error: `${r.status}` }));
+        setSendError(data.error || `Upload failed: ${r.status}`);
+        return;
+      }
+      const data = await r.json();
+      setAttachments((prev) => [...prev, { path: data.path, name: data.name }]);
+    } catch (err) {
+      setSendError((err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadFiles = (files: File[]) => {
+    for (const file of files) {
+      if (file.type.startsWith("image/")) uploadFile(file);
+    }
+  };
+
+  // #344: auto-grow the chat textarea to fit its content up to
+  // ~6 lines, then scroll internally. Reset to 'auto' first so
+  // shrinking after a deletion works — reading scrollHeight on a
+  // fixed-height element would pin the lower bound to the
+  // previous height. Capped at CHAT_INPUT_MAX_PX to match the
+  // inline style; anything taller scrolls inside the textarea.
+  const CHAT_INPUT_MAX_PX = 120;
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, CHAT_INPUT_MAX_PX) + "px";
+  }, [input]);
+
+  // Send message
+  const send = () => {
+    const raw = input.trim();
+    if ((!raw && attachments.length === 0) || sending) return;
+    // #228: if the operator didn't direct the message to a known
+    // agent, prepend `@head ` so the message has somewhere to go.
+    // #426: only check the START of the message — a mention buried
+    // in the body (e.g. "Assign to @dev one at a time") is not a
+    // routing target and still needs the @head prefix.
+    //
+    // #410 / quadwork#276: slash commands are routed by AgentChattr
+    // itself and must NOT be wrapped in `@head /continue` — that
+    // would silently break them. Skip the auto-tag when the message
+    // starts with `/`.
+    const STARTS_WITH_AGENT_RE = /^@(head|dev|re1|re2)\b/i;
+    const startsWithSlash = raw.startsWith("/");
+    const text = (startsWithSlash || STARTS_WITH_AGENT_RE.test(raw)) ? raw : `@head ${raw}`;
+    setSending(true);
+    setSendError(null);
+    fetch(`/api/chat${projectId ? `?project=${encodeURIComponent(projectId)}` : ""}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        channel,
+        sender: "user",
+        ...(attachments.length > 0 ? { attachments } : {}),
+        ...(replyTo ? { reply_to: replyTo.id } : {}),
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Send failed: ${r.status}`);
+        setInput("");
+        setAttachments([]);
+        setReplyTo(null);
+        setTimeout(fetchMessages, 300);
+      })
+      .catch((err) => {
+        setSendError(err.message);
+        console.error(err.message);
+      })
+      .finally(() => setSending(false));
+  };
+
+  const sendPreset = useCallback((message: string) => {
+    if (sending) return;
+    // Apply same routing normalization as send(): prepend @head if no
+    // agent mention or slash command at the start.
+    const STARTS_WITH_AGENT_RE = /^@(head|dev|re1|re2)\b/i;
+    const startsWithSlash = message.startsWith("/");
+    const text = (startsWithSlash || STARTS_WITH_AGENT_RE.test(message)) ? message : `@head ${message}`;
+    setSending(true);
+    setSendError(null);
+    fetch(`/api/chat${projectId ? `?project=${encodeURIComponent(projectId)}` : ""}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, channel, sender: "user" }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Send failed: ${r.status}`);
+        setTimeout(fetchMessages, 300);
+      })
+      .catch((err) => {
+        setSendError(err.message);
+        console.error(err.message);
+      })
+      .finally(() => setSending(false));
+  }, [sending, projectId, channel, fetchMessages]);
+
+  // @mention + slash command handling
+  const handleInput = (value: string) => {
+    setInput(value);
+    const atMatch = value.match(/@(\w*)$/);
+    if (atMatch) {
+      setShowMentions(true);
+      setMentionFilter(atMatch[1].toLowerCase());
+      setShowSlashMenu(false);
+      return;
+    }
+    setShowMentions(false);
+    // #410 / quadwork#276: slash menu opens whenever the buffer
+    // starts with `/`. Special-case `/poetry ` (the only multi-word
+    // command) so the menu stays open while typing the variant.
+    if (value.startsWith("/")) {
+      const tail = value.slice(1);
+      const hasSpace = tail.includes(" ");
+      const isPoetryVariant = value.startsWith("/poetry");
+      setShowSlashMenu(!hasSpace || isPoetryVariant);
+      // Reset the active row whenever the filter changes so the
+      // selection doesn't dangle past the now-shorter list.
+      setSlashIndex(0);
+    } else {
+      setShowSlashMenu(false);
+    }
+  };
+
+  const insertMention = (agent: string) => {
+    const newValue = input.replace(/@\w*$/, `@${agent} `);
+    setInput(newValue);
+    setShowMentions(false);
+    inputRef.current?.focus();
+  };
+
+  const insertSlashCommand = (command: string) => {
+    // Multi-word commands like "/poetry haiku" need a trailing
+    // space-less insert; single-word commands get a trailing space
+    // so the operator can keep typing args (e.g. "/summary @head").
+    const isMultiWord = command.includes(" ");
+    setInput(isMultiWord ? command : `${command} `);
+    setShowSlashMenu(false);
+    inputRef.current?.focus();
+  };
+
+  const filteredAgents = AGENTS.filter((a) =>
+    a.toLowerCase().startsWith(mentionFilter)
+  );
+
+  const filteredSlashCommands = SLASH_COMMANDS.filter((c) =>
+    c.command.toLowerCase().startsWith(input.toLowerCase()),
+  );
+
+  const displayMessages = filterSystem ? messages.filter((m) => !isSystemMessage(m)) : messages;
+
+  return (
+    <div className="flex flex-col h-full bg-bg">
+      {/* Auth error banner */}
+      {authError && (
+        <div className="px-3 py-2 bg-red-900/30 border-b border-red-700/50 text-[11px] text-red-400">
+          {authError}
+        </div>
+      )}
+      {/* Messages */}
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-0.5"
+      >
+        {!loaded && messages.length === 0 && (
+          <div className="flex items-center justify-center h-full">
+            <span className="text-xs text-text-muted">Loading messages...</span>
+          </div>
+        )}
+        {loaded && displayMessages.length === 0 && (
+          // #229: replace the bare "No messages" text with a richer
+          // empty state — friendly icon, headline, click-to-insert
+          // example chips, and a How to Work modal trigger.
+          <div className="flex items-center justify-center h-full">
+            <ProjectChatEmptyState onInsert={(t) => { setInput(t); inputRef.current?.focus(); }} />
+          </div>
+        )}
+        {displayMessages.map((msg) => (
+          <div key={msg.id} className="group flex gap-2 text-[12px] leading-5">
+            <span className="text-text-muted shrink-0 w-12 text-right tabular-nums">
+              {msg.time?.slice(0, 5) || ""}
+            </span>
+            <span
+              className="shrink-0 font-semibold w-10 text-right"
+              style={{ color: senderColor(msg.sender) }}
+            >
+              {senderLabel(msg.sender)}
+            </span>
+            <span className="text-text break-words min-w-0 whitespace-pre-wrap flex-1">
+              {renderMessageWithMentions(msg.text)}
+              {msg.attachments && msg.attachments.length > 0 && (
+                <span className="flex gap-2 mt-1">
+                  {msg.attachments.map((att) => (
+                    <a
+                      key={att.name}
+                      href={`/api/uploads/${encodeURIComponent(projectId || "")}/${encodeURIComponent(att.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={`/api/uploads/${encodeURIComponent(projectId || "")}/${encodeURIComponent(att.name)}`}
+                        alt={att.name}
+                        className="max-w-[200px] max-h-[150px] object-cover border border-border rounded hover:border-accent transition-colors"
+                      />
+                    </a>
+                  ))}
+                </span>
+              )}
+            </span>
+            {/* #397 / quadwork#262: reply affordance — small grey,
+                hover-revealed so it doesn't visually compete with the
+                message text. Mirrors AC's native reply UI. */}
+            <button
+              type="button"
+              onClick={() => {
+                setReplyTo({ id: msg.id, sender: msg.sender });
+                // Only prefill `@<sender>` when the sender is a real
+                // agent. Non-agent rows (user, system, …) would
+                // produce broken mentions that send() then
+                // double-routes through its auto-@head fallback,
+                // turning a reply-to-user into "@head @user …".
+                // For those rows we still set replyTo so the threaded
+                // link works in AC's native UI; we just don't poison
+                // the input with a mention that isn't routable.
+                const KNOWN_AGENTS = new Set(["head", "dev", "re1", "re2"]);
+                if (KNOWN_AGENTS.has(msg.sender.toLowerCase())) {
+                  const prefix = `@${msg.sender} `;
+                  setInput((prev) => (prev.startsWith(prefix) ? prev : prefix));
+                }
+                inputRef.current?.focus();
+              }}
+              className="shrink-0 self-start opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-[10px] text-text-muted hover:text-text px-1 py-0.5 border border-border/50 rounded"
+              title={`Reply to message #${msg.id}`}
+            >
+              reply
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Send input */}
+      <div className="relative shrink-0 border-t border-border">
+        {/* @mention dropdown */}
+        {showMentions && filteredAgents.length > 0 && (
+          <div className="absolute bottom-full left-0 right-0 border border-border bg-bg-surface">
+            {filteredAgents.map((agent) => (
+              <button
+                key={agent}
+                onClick={() => insertMention(agent)}
+                className="w-full text-left px-3 py-1 text-[12px] hover:bg-[#1a1a1a] transition-colors"
+                style={{ color: senderColor(agent) }}
+              >
+                @{agent}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* #410 / quadwork#276: slash command autocomplete dropdown */}
+        {showSlashMenu && filteredSlashCommands.length > 0 && (
+          <div className="absolute bottom-full left-0 right-0 max-h-60 overflow-y-auto border border-border bg-bg-surface z-10">
+            {filteredSlashCommands.map((c, i) => {
+              const active = i === Math.min(slashIndex, filteredSlashCommands.length - 1);
+              return (
+                <button
+                  key={c.command}
+                  onClick={() => insertSlashCommand(c.command)}
+                  onMouseEnter={() => setSlashIndex(i)}
+                  className={`w-full text-left px-3 py-1 transition-colors flex items-baseline gap-2 ${
+                    active ? "bg-[#1a1a1a]" : "hover:bg-[#1a1a1a]"
+                  }`}
+                >
+                  <span className="text-[12px] text-accent font-mono">{c.command}</span>
+                  <span className="text-[10px] text-text-muted truncate">{c.description}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {sendError && (
+          <div className="px-3 py-1 text-[11px] text-red-400 bg-red-900/20 border-b border-red-700/40">
+            {sendError}
+          </div>
+        )}
+        {/* #397 / quadwork#262: active reply indicator with cancel */}
+        {replyTo && (
+          <div className="flex items-center gap-2 px-3 py-1 text-[11px] text-text-muted bg-bg-surface border-b border-border/50">
+            <span>
+              Replying to <span style={{ color: senderColor(replyTo.sender) }}>@{replyTo.sender}</span> #{replyTo.id}
+            </span>
+            <button
+              type="button"
+              onClick={() => setReplyTo(null)}
+              className="ml-auto hover:text-text"
+              title="Cancel reply (Esc)"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        {/* #344: textarea replaces single-line input. Shift+Enter
+            inserts a newline, Enter sends, Korean/Japanese IME
+            composition is guarded via isComposingRef + the native
+            `isComposing` flag on the event. Height follows content
+            up to CHAT_INPUT_MAX_PX (~6 lines), then scrolls. */}
+        <div className="flex items-end gap-1 px-1 relative">
+          <textarea
+            ref={inputRef}
+            rows={1}
+            value={input}
+            onChange={(e) => handleInput(e.target.value)}
+            onCompositionStart={() => { isComposingRef.current = true; }}
+            onCompositionEnd={() => { isComposingRef.current = false; }}
+            onKeyDown={(e) => {
+              // Tab: autocomplete first filtered @mention or slash
+              if (e.key === "Tab" && showMentions && filteredAgents.length > 0) {
+                e.preventDefault();
+                insertMention(filteredAgents[0]);
+                return;
+              }
+              // #410 / quadwork#276: when the slash menu is open,
+              // Tab/Enter commit the active row, ArrowUp/ArrowDown
+              // move it. Enter must NOT call send() in this state —
+              // typing /po + Enter would otherwise post the partial
+              // /po literal instead of selecting a /poetry variant.
+              if (showSlashMenu && filteredSlashCommands.length > 0) {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setSlashIndex((i) => (i + 1) % filteredSlashCommands.length);
+                  return;
+                }
+                if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setSlashIndex((i) => (i - 1 + filteredSlashCommands.length) % filteredSlashCommands.length);
+                  return;
+                }
+                if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
+                  e.preventDefault();
+                  const safeIdx = Math.min(slashIndex, filteredSlashCommands.length - 1);
+                  insertSlashCommand(filteredSlashCommands[safeIdx].command);
+                  return;
+                }
+              }
+              // #344: Shift+Enter → newline (let the textarea
+              // handle it natively). Plain Enter → send, but only
+              // when the IME isn't mid-composition — Korean/Japanese
+              // candidate confirmation fires a keydown with
+              // `isComposing === true` that must not submit.
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                !isComposingRef.current &&
+                !(e.nativeEvent as KeyboardEvent).isComposing
+              ) {
+                e.preventDefault();
+                send();
+              }
+              if (e.key === "Escape") {
+                setShowMentions(false);
+                setShowSlashMenu(false);
+                if (replyTo) setReplyTo(null);
+              }
+            }}
+            onPaste={(e) => {
+              const items = e.clipboardData?.items;
+              if (!items) return;
+              const imageFiles: File[] = [];
+              for (const item of Array.from(items)) {
+                if (item.type.startsWith("image/")) {
+                  const file = item.getAsFile();
+                  if (file) imageFiles.push(file);
+                }
+              }
+              if (imageFiles.length > 0) {
+                e.preventDefault();
+                uploadFiles(imageFiles);
+              }
+            }}
+            onDrop={(e) => {
+              const files = e.dataTransfer?.files;
+              if (!files) return;
+              const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+              if (imageFiles.length > 0) {
+                e.preventDefault();
+                uploadFiles(imageFiles);
+              }
+            }}
+            onDragOver={(e) => {
+              if (e.dataTransfer?.types?.includes("Files")) e.preventDefault();
+            }}
+            placeholder={`Message #${channel}...`}
+            disabled={sending}
+            className="flex-1 bg-transparent px-2 py-2 text-[12px] font-mono text-text placeholder:text-text-muted outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 resize-none overflow-y-auto leading-snug"
+            style={{ maxHeight: 120 }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files && files.length > 0) uploadFiles(Array.from(files));
+              e.target.value = "";
+            }}
+          />
+          <ChatPresets projectId={projectId || ""} onSend={sendPreset} />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="shrink-0 px-1.5 py-2 text-[13px] text-text-muted hover:text-accent transition-colors disabled:opacity-30"
+            title="Attach image"
+          >
+            📎
+          </button>
+          <button
+            onClick={send}
+            disabled={sending || (!input.trim() && attachments.length === 0)}
+            className="shrink-0 px-2 py-2 text-[11px] font-mono text-accent border border-accent/40 rounded hover:bg-accent/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Send (Enter)"
+          >
+            {sending ? "…" : "Send"}
+          </button>
+        </div>
+        {/* #466: attachment thumbnail previews */}
+        {(attachments.length > 0 || uploading) && (
+          <div className="flex gap-2 px-2 py-1 flex-wrap">
+            {attachments.map((att, i) => (
+              <div key={att.name} className="relative group">
+                <img
+                  src={`/api/uploads/${encodeURIComponent(projectId || "")}/${encodeURIComponent(att.name)}`}
+                  alt={att.name}
+                  className="h-16 max-w-[200px] object-cover border border-border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-bg border border-border rounded-full text-[10px] text-text-muted hover:text-error opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  title="Remove"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {uploading && (
+              <div className="h-16 w-16 border border-border rounded flex items-center justify-center">
+                <span className="text-[10px] text-text-muted animate-pulse">...</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

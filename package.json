@@ -1,0 +1,69 @@
+{
+  "name": "quadwork",
+  "version": "2.0.0",
+  "description": "Unified dashboard for multi-agent coding teams — 4 AI agents, one terminal",
+  "bin": {
+    "quadwork": "./bin/quadwork.js"
+  },
+  "files": [
+    "bin/",
+    "server/",
+    "!server/**/*.test.js",
+    "!server/__tests__/",
+    "templates/",
+    "out/"
+  ],
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node server/",
+    "lint": "eslint",
+    "server": "node server/",
+    "prepack": "npm run build",
+    "release:patch": "npm version patch && git push origin main --follow-tags && VERSION=$(node -p 'require(\"./package.json\").version') && gh release create \"v$VERSION\" --generate-notes --latest && npm publish",
+    "release:minor": "npm version minor && git push origin main --follow-tags && VERSION=$(node -p 'require(\"./package.json\").version') && gh release create \"v$VERSION\" --generate-notes --latest && npm publish",
+    "release:major": "npm version major && git push origin main --follow-tags && VERSION=$(node -p 'require(\"./package.json\").version') && gh release create \"v$VERSION\" --generate-notes --latest && npm publish"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "multi-agent",
+    "coding",
+    "dashboard",
+    "terminal",
+    "claude",
+    "codex",
+    "quadwork"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/realproject7/quadwork.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "node-pty": "^1.2.0-beta.12",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
