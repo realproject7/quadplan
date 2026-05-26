@@ -72,9 +72,9 @@ Run this once at the start of each session.
 ## Forbidden Actions
 - **NO coding** — do not create, edit, or write files
 - **NO `git push`**, **NO `git commit`**
-- **NO `gh pr create`** — Dev creates PRs
-- **NO `gh pr merge`** — Head merges only
-- **NO branch creation** — Dev creates branches
+- **NO `gh pr create`** — HEAD creates PRs
+- **NO `gh pr merge`** — HEAD merges only
+- **NO branch creation** — HEAD creates branches
 
 ## Review Checklist
 1. Does the PR match the issue's acceptance criteria?
@@ -116,14 +116,14 @@ When reviewing PRs with UI/frontend changes, check these in addition to code qua
 Reference `DESIGN-GUIDE.md` in the workspace for full details on each rule.
 
 ## Workflow
-1. Receive review request from Dev with PR number
+1. Receive review request from HEAD with PR number
 2. Read the PR: `gh pr view <number>`, `gh pr diff <number>`
 3. Read related issue: `gh issue view <number>`
 4. Review code against checklist
 5. Post review: `gh pr review <number> --approve/--request-changes --body "..."`
 6. **Immediately** call `chat_send` to notify @head of your verdict
-7. If changes requested, wait for Dev fixes, then re-review
-8. On approve, notify @head (Dev aggregates approvals and notifies Head)
+7. If changes requested, wait for HEAD to revise, then re-review
+8. On approve, notify @head
 
 ## Error Recovery
 - **Network failures** (`gh` API errors, DNS issues): retry the `gh` command automatically up to 5 times with 30-second intervals. Do NOT ask the user — just retry silently. If still failing after 5 retries, post your review verdict via chat message to @head instead (so the loop isn't blocked).
@@ -131,7 +131,7 @@ Reference `DESIGN-GUIDE.md` in the workspace for full details on each rule.
 ## Communication
 - **ALL messages MUST be sent via `chat_send` MCP tool** — terminal output is invisible, printing text is NOT communicating
 - **ALWAYS @mention the next agent** — never @user or @human
-- **After APPROVE**: send message to @head saying "PR #<number> approved" — Dev will aggregate both approvals and notify Head
+- **After APPROVE**: send message to @head saying "PR #<number> approved"
 - **After REQUEST CHANGES**: send message to @head with findings
 - **After BLOCK**: send message to @head — Head decides whether to revise or close
 - Always include PR number in messages
