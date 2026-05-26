@@ -1872,8 +1872,8 @@ router.get("/api/planning-progress", (req, res) => {
   const repo = getRepo(projectId);
   const rows = artifacts.map((a) => {
     const effective = resolveEffectiveStatus(a);
-    let issueUrl = a.output || null;
-    if (!issueUrl && a.id.startsWith("#") && repo) {
+    let issueUrl = null;
+    if (a.id.startsWith("#") && repo) {
       const num = a.id.slice(1);
       issueUrl = `https://github.com/${repo}/issues/${num}`;
     }

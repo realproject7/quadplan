@@ -81,10 +81,11 @@ function ProgressBar({ percent }: { percent: number }) {
 }
 
 function artifactLink(artifact: ArtifactRow): string | null {
+  if (artifact.output) {
+    if (artifact.output.startsWith("http://") || artifact.output.startsWith("https://")) return artifact.output;
+    if (artifact.output.startsWith("/") || artifact.output.startsWith("artifacts/")) return artifact.output;
+  }
   if (artifact.issueUrl) return artifact.issueUrl;
-  if (!artifact.output) return null;
-  if (artifact.output.startsWith("http://") || artifact.output.startsWith("https://")) return artifact.output;
-  if (artifact.output.startsWith("/") || artifact.output.startsWith("artifacts/")) return artifact.output;
   return null;
 }
 
