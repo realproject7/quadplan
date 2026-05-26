@@ -7,6 +7,7 @@ import { useLocale } from "@/components/LocaleProvider";
 
 interface HomeEmptyStateProps {
   hasProjects: boolean;
+  butlerEnabled?: boolean;
 }
 
 const COPY = {
@@ -39,7 +40,7 @@ const COPY = {
  * that adapts to whether the user has any projects yet. Always
  * surfaces a "How to Work" button that opens the timeline modal.
  */
-export default function HomeEmptyState({ hasProjects }: HomeEmptyStateProps) {
+export default function HomeEmptyState({ hasProjects, butlerEnabled }: HomeEmptyStateProps) {
   const { locale } = useLocale();
   const t = COPY[locale];
   const [howOpen, setHowOpen] = useState(false);
@@ -62,7 +63,8 @@ export default function HomeEmptyState({ hasProjects }: HomeEmptyStateProps) {
           </span>
         ) : (
           <Link
-            href="/settings#butler"
+            href={butlerEnabled ? "#butler" : "/settings#butler"}
+            onClick={butlerEnabled ? (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); } : undefined}
             className="px-4 py-2 text-[12px] font-semibold text-bg bg-accent hover:bg-accent-dim transition-colors"
           >
             {t.addProject}

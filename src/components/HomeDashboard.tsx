@@ -158,7 +158,7 @@ export default function HomeDashboard() {
           )}
           {projectsState === "loaded" && projects.length === 0 && (
             <div className="mb-6">
-              <HomeEmptyState hasProjects={false} />
+              <HomeEmptyState hasProjects={false} butlerEnabled={butlerEnabled} />
             </div>
           )}
           {projectsState === "error" && (
