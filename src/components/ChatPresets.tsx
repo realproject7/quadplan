@@ -14,16 +14,15 @@ const DEFAULT_PRESETS: Preset[] = [
   {
     id: "default-1",
     title: "Queue Check — Trigger",
-    message: `@head @dev @re1 @re2 – Queue check.
-@head: Merge any PR with both approvals, assign next from ~/.quadplan/{{project}}/OVERNIGHT-QUEUE.md.
-@dev: Work on assigned ticket or address review feedback.
-@re1 & @re2: Review open PRs. If @dev pushed fixes, re-review. Post verdict on PR AND notify @dev here.
+    message: `@head @re1 @re2 — Queue check.
+@head: Continue the next planning item from ~/.quadplan/{{project}}/OVERNIGHT-QUEUE.md.
+@re1 & @re2: Review open artifacts. If @head pushed revisions, re-review. Post verdict and notify here.
 ALL: Communicate via this chat by tagging agents. Your terminal is NOT visible.`,
   },
   {
     id: "default-2",
     title: "Suffix Reminder",
-    message: `All agents: ignore numeric suffixes in your identity. dev, dev-1, dev-2 are the same Dev agent. re1, re1-2 are the same RE1. re2, re2-2 are the same RE2. head, head-2 are the same Head. When tagging others, use the base name (@dev, @re1, @re2, @head). When checking for mentions to you, match your base role name regardless of suffix.`,
+    message: `All agents: ignore numeric suffixes in your identity. head, head-2 are the same HEAD. re1, re1-2 are the same RE1. re2, re2-2 are the same RE2. When tagging others, use the base name (@head, @re1, @re2). When checking for mentions to you, match your base role name regardless of suffix.`,
   },
   {
     id: "default-3",
@@ -33,7 +32,7 @@ ALL: Communicate via this chat by tagging agents. Your terminal is NOT visible.`
   {
     id: "default-4",
     title: "Agent Online Check",
-    message: `@head Are you online? If so, ping @dev, @re1, and @re2 to confirm whether they are online and available.`,
+    message: `@head Are you online? If so, ping @re1 and @re2 to confirm whether they are online and available.`,
   },
 ];
 
