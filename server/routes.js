@@ -1925,9 +1925,9 @@ const MIME_TYPES = {
   ".txt": "text/plain; charset=utf-8",
 };
 
-router.get("/api/artifact-serve/:project/*", (req, res) => {
+router.get("/api/artifact-serve/:project/:filepath(.+)", (req, res) => {
   const projectId = req.params.project;
-  const filePath = req.params[0];
+  const filePath = req.params.filepath;
   if (!projectId || !filePath) return res.status(400).send("Missing project or path");
 
   const { readArtifactContentRaw } = require("./artifact-preview");
