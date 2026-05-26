@@ -108,10 +108,9 @@ function minutesToHoursStr(min: number): string {
 function defaultMessage(projectId: string) {
   const queuePath = `~/.quadplan/${projectId}/OVERNIGHT-QUEUE.md`;
   return (
-`@head @dev @re1 @re2 — Queue check.
-@head: Merge any PR with both approvals, assign next from ${queuePath}.
-@dev: Work on assigned ticket or address review feedback.
-@re1 & @re2: Review open PRs. If @dev pushed fixes, re-review. Post verdict on PR AND notify @dev here.
+`@head @re1 @re2 — Queue check.
+@head: Continue the next planning item from ${queuePath}.
+@re1 & @re2: Review open artifacts. If @head pushed revisions, re-review. Post verdict and notify here.
 ALL: Communicate via this chat by tagging agents. Your terminal is NOT visible.`
   );
 }

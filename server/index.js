@@ -971,10 +971,9 @@ app.get("/api/butler/status", (_req, res) => {
 
 const triggers = new Map();
 
-const DEFAULT_MESSAGE = `@head @re1 @re2 @dev — Queue check.
-Head: Merge any PR with both approvals, assign next from queue.
-Dev: Work on assigned ticket or address review feedback.
-RE1/RE2: Review open PRs. If Dev pushed fixes, re-review. Post verdict on PR AND notify here.
+const DEFAULT_MESSAGE = `@head @re1 @re2 — Queue check.
+HEAD: Continue the next planning item from OVERNIGHT-QUEUE.md.
+RE1/RE2: Review open artifacts. If HEAD pushed revisions, re-review. Post verdict and notify here.
 ALL: Communicate via this chat by tagging agents. Your terminal is NOT visible.`;
 
 // #518: server-side bridge lifecycle helpers. Stop and start Telegram +

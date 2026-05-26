@@ -120,7 +120,7 @@ function ServerSection({ projectId }: { projectId: string }) {
   const [agentStates, setAgentStates] = useState<Record<string, string>>({});
   const interruptRef = useRef<HTMLDivElement>(null);
 
-  const AGENT_IDS = ["head", "dev", "re1", "re2"];
+  const AGENT_IDS = ["head", "re1", "re2"];
 
   useEffect(() => {
     const poll = () => {

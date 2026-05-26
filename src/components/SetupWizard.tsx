@@ -191,10 +191,9 @@ const BACKENDS: { value: string; label: string }[] = [
 ];
 
 const AGENTS = [
-  { key: "head", label: "Head", role: "Owner / Final Guard", desc: "Merges PRs, makes final calls" },
-  { key: "re1", label: "RE1", role: "Design Reviewer", desc: "Reviews architecture & design" },
-  { key: "re2", label: "RE2", role: "Code Reviewer", desc: "Reviews implementation quality" },
-  { key: "dev", label: "Dev", role: "Full-Stack Builder", desc: "Implements features & fixes" },
+  { key: "head", label: "HEAD", role: "Project Lead", desc: "Leads planning and creates artifacts" },
+  { key: "re1", label: "RE1", role: "Reviewer 1", desc: "Reviews planning artifacts independently" },
+  { key: "re2", label: "RE2", role: "Reviewer 2", desc: "Reviews planning artifacts independently" },
 ];
 
 /* ── Component ─────────────────────────────────────────────────────────── */
@@ -281,8 +280,7 @@ function WorkdirStep({ repo, workingDir, setWorkingDir, error, onNext }: {
       <div className="border border-border bg-bg-surface p-3 mt-4 text-[11px] text-text-muted font-mono space-y-0.5">
         <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-sans">{t.layout}</p>
         <p className="text-accent">{slug}/              &larr; your repo</p>
-        <p>{slug}-head/         &larr; Head agent</p>
-        <p>{slug}-dev/          &larr; Dev agent</p>
+        <p>{slug}-head/         &larr; HEAD agent</p>
         <p>{slug}-re1/          &larr; RE1</p>
         <p>{slug}-re2/          &larr; RE2</p>
       </div>

@@ -42,11 +42,8 @@ const COPY = {
 // RE1 BL, RE2 BR. TerminalGrid renders tiles in array
 // order into a 2x2 row-flow grid (default `grid grid-rows-2
 // grid-cols-2`, no `grid-flow-col`), so [head, dev, re1,
-// re2] maps to TL, TR, BL, BR. Keep them in sync if you
-// reorder this list.
 const FOUR_AGENTS = [
-  { id: "head", label: "Head" },
-  { id: "dev", label: "Dev" },
+  { id: "head", label: "HEAD" },
   { id: "re1", label: "RE1" },
   { id: "re2", label: "RE2" },
 ];
