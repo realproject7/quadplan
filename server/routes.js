@@ -15,7 +15,7 @@ const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
 const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
 const { sendPlanningPulse } = require("./planning-loop-pulse");
-const { discoverArtifacts, readArtifactContent } = require("./artifact-preview");
+const { discoverArtifacts, readArtifactContent, isPathSafe, getAllowedRoots } = require("./artifact-preview");
 
 const router = express.Router();
 
@@ -1908,6 +1908,28 @@ router.get("/api/artifact-preview", (req, res) => {
   if (!result.ok) return res.status(result.error === "Path outside allowed directories" ? 403 : 404).json({ error: result.error });
 
   return res.json({ content: result.content, ext: result.ext });
+});
+
+router.get("/api/artifact-serve", (req, res) => {
+  const projectId = req.query.project;
+  const filePath = req.query.path;
+  if (!projectId || !filePath) return res.status(400).send("Missing project or path");
+
+  const result = readArtifactContent(projectId, filePath);
+  if (!result.ok) {
+    const code = result.error === "Path outside allowed directories" || result.error === "Symlinks not allowed" ? 403 : 404;
+    return res.status(code).send(result.error);
+  }
+
+  if (result.ext === ".html") {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-inline'; script-src 'none'");
+  } else if (result.ext === ".md") {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  } else {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  }
+  return res.send(result.content);
 });
 
 const _planningLoopTimers = new Map();
