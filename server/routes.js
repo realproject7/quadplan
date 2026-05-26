@@ -24,6 +24,7 @@ const { CONFIG_DIR, CONFIG_PATH, readConfig, sanitizeOperatorName, ensureSecureD
 const ENV_PATH = path.join(CONFIG_DIR, ".env");
 const TEMPLATES_DIR = path.join(__dirname, "..", "templates");
 const REPO_RE = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
+const PROJECT_AGENTS = ["head", "re1", "re2"];
 
 function isLocalhost(ip) {
   return ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1";
@@ -2078,7 +2079,7 @@ router.post("/api/setup", (req, res) => {
       // Empty repos have no commits — git worktree add requires at least one.
       const headCheck = exec("git", ["rev-parse", "HEAD"], { cwd: workingDir });
       if (!headCheck.ok) {
-        exec("git", ["commit", "--allow-empty", "-m", "Initial commit (created by QuadWork setup)"], { cwd: workingDir });
+        exec("git", ["commit", "--allow-empty", "-m", "Initial commit (created by QuadPlan setup)"], { cwd: workingDir });
         const branchResult = exec("git", ["symbolic-ref", "--short", "HEAD"], { cwd: workingDir });
         const defaultBranch = branchResult.ok ? branchResult.output : "main";
         exec("git", ["push", "origin", defaultBranch], { cwd: workingDir });
@@ -2086,7 +2087,7 @@ router.post("/api/setup", (req, res) => {
       // Sibling dirs: ../projectName-head/, ../projectName-re1/, etc. (matches CLI wizard)
       const projectName = path.basename(workingDir);
       const parentDir = path.dirname(workingDir);
-      const agents = ["head", "re1", "re2", "dev"];
+      const agents = PROJECT_AGENTS;
       const created = [];
       const errors = [];
       for (const agent of agents) {
@@ -2129,7 +2130,7 @@ router.post("/api/setup", (req, res) => {
       const parentDir = path.dirname(workingDir);
       const reviewerUser = body.reviewerUser || "";
       const reviewerTokenPath = body.reviewerTokenPath || path.join(CONFIG_DIR, "reviewer-token");
-      const agents = ["head", "re1", "re2", "dev"];
+      const agents = PROJECT_AGENTS;
       const seeded = [];
       for (const agent of agents) {
         // Sibling dir layout (matches CLI wizard)
@@ -2226,7 +2227,7 @@ router.post("/api/setup", (req, res) => {
       // "Selected model is at capacity" out of the box. Operators can
       // bump individual agents back up via the Agent Models widget.
       const agents = {};
-      for (const agentId of ["head", "re1", "re2", "dev"]) {
+      for (const agentId of PROJECT_AGENTS) {
         const cmd = (backends && backends[agentId]) || "claude";
         const cliBase = cmd.split("/").pop().split(" ")[0];
         const injectMode = cliBase === "codex" ? "proxy_flag" : cliBase === "gemini" ? "env" : "flag";
@@ -2726,7 +2727,7 @@ router.get("/api/project/:projectId/agent-models", (req, res) => {
     const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
     const project = cfg.projects?.find((p) => p.id === req.params.projectId);
     if (!project) return res.status(404).json({ error: "Unknown project" });
-    const rows = ["head", "re1", "re2", "dev"].map((agentId) => {
+    const rows = PROJECT_AGENTS.map((agentId) => {
       const a = project.agents?.[agentId] || {};
       const command = a.command || "claude";
       const cliBase = command.split("/").pop().split(" ")[0];
@@ -2746,7 +2747,7 @@ router.get("/api/project/:projectId/agent-models", (req, res) => {
 
 router.put("/api/project/:projectId/agent-models/:agentId", (req, res) => {
   const { projectId, agentId } = req.params;
-  if (!["head", "re1", "re2", "dev"].includes(agentId)) {
+  if (!PROJECT_AGENTS.includes(agentId)) {
     return res.json({ ok: false, error: "Unknown agent" });
   }
   const body = req.body || {};
@@ -2801,3 +2802,4 @@ module.exports.getProjectChatMode = getProjectChatMode;
 module.exports.setPtyDispatchCallback = setPtyDispatchCallback;
 module.exports.seedProjectWorkspace = seedProjectWorkspace;
 module.exports.seedProjectRuntime = seedProjectRuntime;
+module.exports.PROJECT_AGENTS = PROJECT_AGENTS;

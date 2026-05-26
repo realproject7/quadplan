@@ -191,10 +191,9 @@ const BACKENDS: { value: string; label: string }[] = [
 ];
 
 const AGENTS = [
-  { key: "head", label: "Head", role: "Owner / Final Guard", desc: "Merges PRs, makes final calls" },
-  { key: "re1", label: "RE1", role: "Design Reviewer", desc: "Reviews architecture & design" },
-  { key: "re2", label: "RE2", role: "Code Reviewer", desc: "Reviews implementation quality" },
-  { key: "dev", label: "Dev", role: "Full-Stack Builder", desc: "Implements features & fixes" },
+  { key: "head", label: "HEAD", role: "Project Lead", desc: "Leads planning and creates artifacts" },
+  { key: "re1", label: "RE1", role: "Reviewer 1", desc: "Reviews planning artifacts independently" },
+  { key: "re2", label: "RE2", role: "Reviewer 2", desc: "Reviews planning artifacts independently" },
 ];
 
 /* ── Component ─────────────────────────────────────────────────────────── */
@@ -281,8 +280,7 @@ function WorkdirStep({ repo, workingDir, setWorkingDir, error, onNext }: {
       <div className="border border-border bg-bg-surface p-3 mt-4 text-[11px] text-text-muted font-mono space-y-0.5">
         <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-sans">{t.layout}</p>
         <p className="text-accent">{slug}/              &larr; your repo</p>
-        <p>{slug}-head/         &larr; Head agent</p>
-        <p>{slug}-dev/          &larr; Dev agent</p>
+        <p>{slug}-head/         &larr; HEAD agent</p>
         <p>{slug}-re1/          &larr; RE1</p>
         <p>{slug}-re2/          &larr; RE2</p>
       </div>
@@ -317,7 +315,7 @@ export default function SetupWizard() {
   const [selectedOrg, setSelectedOrg] = useState("");
   const [enableProtection, setEnableProtection] = useState(false);
   const [backends, setBackends] = useState<Record<string, string>>({
-    head: "claude", re1: "claude", re2: "claude", dev: "claude",
+    head: "claude", re1: "claude", re2: "claude",
   });
   const [autoApprove, setAutoApprove] = useState(true);
   const [showReviewerCreds, setShowReviewerCreds] = useState(false);
@@ -353,10 +351,10 @@ export default function SetupWizard() {
           : !status.claude && status.codex ? "codex"
           : null;
         if (availableCli) {
-          setBackends({ head: availableCli, re1: availableCli, re2: availableCli, dev: availableCli });
+          setBackends({ head: availableCli, re1: availableCli, re2: availableCli });
         } else if (status.claude && status.codex) {
           // Both available — use mixed defaults for review diversity
-          setBackends({ head: "codex", dev: "claude", re1: "codex", re2: "claude" });
+          setBackends({ head: "codex", re1: "codex", re2: "claude" });
         }
       })
       .catch(() => {});
@@ -781,7 +779,7 @@ export default function SetupWizard() {
                 {/* Single-CLI friendly message */}
                 {cliStatus && !cliStatus.claude && cliStatus.codex && (
                   <div className="border border-accent/20 bg-accent/5 p-3 mb-4 text-[11px]">
-                    <p className="text-text">You have Codex CLI installed — great! All 4 agents will use Codex.</p>
+                    <p className="text-text">You have Codex CLI installed — great! All 3 agents will use Codex.</p>
                     <p className="text-text-muted mt-1.5">
                       Tip: Installing Claude Code too gives your team different AI perspectives,
                       which can improve code review quality. You can add it anytime:
@@ -792,7 +790,7 @@ export default function SetupWizard() {
                 )}
                 {cliStatus && cliStatus.claude && !cliStatus.codex && (
                   <div className="border border-accent/20 bg-accent/5 p-3 mb-4 text-[11px]">
-                    <p className="text-text">You have Claude Code installed — great! All 4 agents will use Claude.</p>
+                    <p className="text-text">You have Claude Code installed — great! All 3 agents will use Claude.</p>
                     <p className="text-text-muted mt-1.5">
                       Tip: Installing Codex CLI too gives your team different AI perspectives,
                       which can improve code review quality. You can add it anytime:
