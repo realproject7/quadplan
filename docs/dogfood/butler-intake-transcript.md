@@ -17,21 +17,65 @@
 7. **Time zone handling?** → Use local system time. Days cut at midnight.
 8. **Existing tools to integrate with?** → None. Standalone CLI.
 
-## Resulting Proposal (Summary)
+## Resulting Proposal
 
-Butler would produce `docs/PROPOSAL.md` with:
+Butler would produce the following `docs/PROPOSAL.md`:
 
-- **Vision**: Local CLI habit tracker with streaks and weekly summaries
-- **Audience**: Single developer/user on macOS/Linux
-- **User workflows**: `habit add`, `habit log`, `habit streak`, `habit week`
-- **Technical assumptions**: Node.js CLI, JSON storage in `~/.habits/`
-- **Phases**:
-  - Phase 1: Core CLI commands (add, log, list)
-  - Phase 2: Streak calculation and display
-  - Phase 3: Weekly summary with terminal table + markdown export
-- **Acceptance criteria** per phase
-- **Risks**: date edge cases, timezone handling
-- **Success criteria**: user can track 3+ habits with streaks for 2 weeks
+### Vision
+A local-first CLI tool for tracking daily habits (exercise, reading, hydration) with streak tracking and weekly summaries. No cloud, no accounts — just a fast terminal command.
+
+### Audience
+Single developer/user on macOS or Linux who wants lightweight habit tracking without a web app.
+
+### User Workflows
+- `habit add "Exercise" --type boolean` — register a new habit
+- `habit log "Exercise"` — mark today's entry (boolean: done)
+- `habit log "Water" --value 8` — log a numeric value
+- `habit streak "Exercise"` — show current and longest streak
+- `habit week` — show weekly summary table
+- `habit week --export md` — export weekly summary as markdown
+
+### Technical Assumptions
+- Node.js CLI (bin entry in package.json)
+- JSON storage: `~/.habits/{habit-slug}.json` (one file per habit)
+- Days determined by local system time, midnight cutoff
+- No external dependencies beyond Node.js built-ins + a table formatter
+
+### Phase 1 — Core CLI Commands
+- **Scope**: `habit add`, `habit log`, `habit list`, `habit remove`
+- **Acceptance criteria**:
+  - [ ] `habit add "Exercise"` creates `~/.habits/exercise.json`
+  - [ ] `habit log "Exercise"` appends today's date to the log
+  - [ ] `habit log "Water" --value 8` stores numeric value
+  - [ ] `habit list` shows all registered habits with last logged date
+  - [ ] `habit remove "Exercise"` deletes the habit file after confirmation
+  - [ ] Duplicate log for same day updates rather than duplicates
+
+### Phase 2 — Streak Calculation
+- **Scope**: `habit streak`, streak display in `habit list`
+- **Depends on**: Phase 1
+- **Acceptance criteria**:
+  - [ ] `habit streak "Exercise"` shows current streak count and longest streak
+  - [ ] Streak resets on any missed day (hard reset, no grace)
+  - [ ] `habit list` shows current streak next to each habit
+  - [ ] Streak correctly handles timezone by using local midnight
+
+### Phase 3 — Weekly Summary
+- **Scope**: `habit week`, markdown export
+- **Depends on**: Phase 1 + Phase 2
+- **Acceptance criteria**:
+  - [ ] `habit week` renders a terminal table with days as columns, habits as rows
+  - [ ] Boolean habits show checkmarks, numeric habits show values
+  - [ ] `habit week --export md` writes a markdown file to stdout or a specified path
+  - [ ] Week boundary is Monday-Sunday
+
+### Risks
+- Date edge cases around midnight and timezone changes
+- JSON file corruption if process is killed during write (mitigate: write to temp then rename)
+- Large habit files over months of daily logging (mitigate: archive old entries)
+
+### Success Criteria
+User can track 3+ habits with accurate streaks for 2 weeks using only CLI commands.
 
 ## Butler Role Verification
 
