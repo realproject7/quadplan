@@ -39,6 +39,10 @@ Use these templates when creating GitHub issues. Copy the appropriate template, 
 ```markdown
 Parent: #[epic-number]
 
+## Purpose
+
+[Why this ticket exists and what outcome it supports. Link to the proposal section that drives this work.]
+
 ## Scope
 
 [What this ticket covers. 2-3 sentences.]
