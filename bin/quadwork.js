@@ -8,10 +8,10 @@ const readline = require("readline");
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const CONFIG_DIR = path.join(os.homedir(), ".quadwork");
+const CONFIG_DIR = path.join(os.homedir(), ".quadplan");
 const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
 const TEMPLATES_DIR = path.join(__dirname, "..", "templates");
-const AGENTS = ["head", "re1", "re2", "dev"];
+const AGENTS = ["head", "re1", "re2"];
 
 // ─── Permission Helpers ────────────────────────────────────────────────────
 
@@ -556,7 +556,7 @@ async function setupAgents(rl, repo) {
     log("GitHub username for the reviewer account (used in RE1/RE2 seed files for PR reviews).");
     reviewerUser = await ask(rl, "Reviewer GitHub username", "");
     log("Path to a file containing a GitHub PAT for the reviewer account.");
-    reviewerTokenPath = await ask(rl, "Reviewer token file path", path.join(os.homedir(), ".quadwork", "reviewer-token"));
+    reviewerTokenPath = await ask(rl, "Reviewer token file path", path.join(CONFIG_DIR, "reviewer-token"));
   }
 
   const projectName = path.basename(absDir);
@@ -632,8 +632,25 @@ async function setupAgents(rl, repo) {
 
 // ─── Write QuadWork Config ──────────────────────────────────────────────────
 
+function seedProjectWorkspaceCli(workingDir, projectName) {
+  if (!workingDir || !fs.existsSync(workingDir)) return;
+  const dirs = [
+    path.join(workingDir, "docs"),
+    path.join(workingDir, "artifacts", "design"),
+    path.join(workingDir, "artifacts", "tickets"),
+    path.join(workingDir, "artifacts", "docs"),
+  ];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  }
+  const proposalPath = path.join(workingDir, "docs", "PROPOSAL.md");
+  if (!fs.existsSync(proposalPath)) {
+    fs.writeFileSync(proposalPath, `# ${projectName || "Project"} — Proposal\n\n> Replace this stub with the project proposal.\n`);
+  }
+}
+
 /**
- * Seed ~/.quadwork/{projectName}/OVERNIGHT-QUEUE.md from templates/.
+ * Seed ~/.quadplan/{projectName}/OVERNIGHT-QUEUE.md from templates/.
  * Idempotent — never overwrites an existing file so user and Head
  * agent edits are preserved across re-runs.
  */
@@ -674,6 +691,9 @@ function writeQuadWorkConfig(setup) {
     name: setup.projectName,
     repo: setup.repo,
     working_dir: setup.absDir,
+    proposal_path: path.join(setup.absDir, "docs", "PROPOSAL.md"),
+    queue_path: path.join(CONFIG_DIR, setup.projectName, "OVERNIGHT-QUEUE.md"),
+    artifact_dir: path.join(setup.absDir, "artifacts"),
     agents: {},
   };
 
@@ -702,10 +722,17 @@ function writeQuadWorkConfig(setup) {
 
   const existingIdx = config.projects.findIndex((p) => p.id === setup.projectName);
 
-  // Batch 25 / #204: seed the per-project OVERNIGHT-QUEUE.md at
-  // ~/.quadwork/{id}/OVERNIGHT-QUEUE.md. Idempotent — if the file
-  // already exists, preserve the user's / Head agent's edits.
+  // Seed per-project OVERNIGHT-QUEUE.md. Idempotent.
   writeOvernightQueueFile(setup.projectName, setup.repo);
+
+  // Seed QuadPlan project workspace (docs/, artifacts/)
+  seedProjectWorkspaceCli(setup.absDir, setup.projectName);
+
+  // Seed runtime directories under ~/.quadplan/{id}/
+  for (const dir of ["chat", "history-snapshots"]) {
+    const runtimeDir = path.join(CONFIG_DIR, setup.projectName, dir);
+    if (!fs.existsSync(runtimeDir)) ensureSecureDir(runtimeDir);
+  }
 
   // Upsert project
   if (existingIdx >= 0) config.projects[existingIdx] = project;
@@ -924,11 +951,11 @@ async function cmdAddProject() {
  *
  * Usage:
  *   npx quadwork cleanup --project <id>
- *     Removes ~/.quadwork/{id}/ and the matching entry from config.json.
+ *     Removes ~/.quadplan/{id}/ and the matching entry from config.json.
  *     Leaves the user's worktrees and source repos completely alone.
  *
  *   npx quadwork cleanup --legacy
- *     Removes the legacy shared ~/.quadwork/agentchattr/ install. Refuses
+ *     Removes the legacy shared ~/.quadplan/agentchattr/ install. Refuses
  *     to run unless every project in config.json already has its own
  *     working per-project clone (so nothing falls back onto the legacy
  *     install via #186's resolution ladder).
@@ -945,7 +972,7 @@ async function cmdCleanup() {
     console.log(`
   Usage:
     npx quadwork cleanup --project <id>   Remove a project's AgentChattr clone + config entry
-    npx quadwork cleanup --legacy         Remove the legacy ~/.quadwork/agentchattr/ install
+    npx quadwork cleanup --legacy         Remove the legacy ~/.quadplan/agentchattr/ install
 `);
     process.exit(1);
   }
@@ -988,7 +1015,7 @@ async function cmdCleanup() {
         warn(`No legacy install at ${legacyDir}.`);
         return;
       }
-      header("Cleanup: legacy ~/.quadwork/agentchattr/");
+      header("Cleanup: legacy ~/.quadplan/agentchattr/");
 
       // Refuse if any project still depends on the legacy install — i.e.
       // any project without its own working per-project clone (run.py +
@@ -1050,7 +1077,7 @@ function cmdDoctor() {
 
 /**
  * One-shot migration: rename reviewer1/reviewer2 → re1/re2 in
- * ~/.quadwork/config.json and per-project AgentChattr config.toml files.
+ * ~/.quadplan/config.json and per-project AgentChattr config.toml files.
  * Idempotent — skips projects that already use the new slugs.
  *
  * Does NOT rename worktree directories; instead adds a worktree_suffix
