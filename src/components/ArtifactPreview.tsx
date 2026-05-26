@@ -102,7 +102,7 @@ export default function ArtifactPreview({ projectId, artifactPath }: ArtifactPre
   }
 
   if (ext === ".html") {
-    const serveUrl = `/api/artifact-serve?project=${encodeURIComponent(projectId)}&path=${encodeURIComponent(artifactPath!)}`;
+    const serveUrl = `/api/artifact-serve/${encodeURIComponent(projectId)}/${artifactPath!}`;
     return (
       <div className="h-full flex flex-col">
         <div className="flex items-center gap-3 px-4 py-2 border-b border-border shrink-0">

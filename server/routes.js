@@ -1910,24 +1910,42 @@ router.get("/api/artifact-preview", (req, res) => {
   return res.json({ content: result.content, ext: result.ext });
 });
 
-router.get("/api/artifact-serve", (req, res) => {
-  const projectId = req.query.project;
-  const filePath = req.query.path;
+const MIME_TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".md": "text/plain; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+};
+
+router.get("/api/artifact-serve/:project/*", (req, res) => {
+  const projectId = req.params.project;
+  const filePath = req.params[0];
   if (!projectId || !filePath) return res.status(400).send("Missing project or path");
 
-  const result = readArtifactContent(projectId, filePath);
+  const { readArtifactContentRaw } = require("./artifact-preview");
+  const result = readArtifactContentRaw(projectId, filePath);
   if (!result.ok) {
     const code = result.error === "Path outside allowed directories" || result.error === "Symlinks not allowed" ? 403 : 404;
     return res.status(code).send(result.error);
   }
 
-  if (result.ext === ".html") {
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
+  const ext = result.ext || "";
+  const mime = MIME_TYPES[ext] || "application/octet-stream";
+  res.setHeader("Content-Type", mime);
+  if (ext === ".html") {
     res.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-inline'; script-src 'none'");
-  } else if (result.ext === ".md") {
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-  } else {
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  }
+
+  if (result.binary) {
+    return res.send(result.buffer);
   }
   return res.send(result.content);
 });
