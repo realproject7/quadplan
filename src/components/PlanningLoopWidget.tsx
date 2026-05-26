@@ -10,10 +10,11 @@ interface PlanningLoopWidgetProps {
 
 interface LoopStatus {
   enabled: boolean;
-  state: "running" | "paused" | "error";
+  state: "running" | "paused" | "error" | "guard_paused";
   intervalMin: number | null;
   lastPulse: number | null;
   nextPulse: number | null;
+  guardPaused?: boolean;
 }
 
 const INTERVALS = [5, 10, 15, 30];
@@ -199,10 +200,10 @@ export default function PlanningLoopWidget({ projectId }: PlanningLoopWidgetProp
             {t.state}:
             <span className={
               status.state === "running" ? "text-success" :
-              status.state === "error" ? "text-error" :
+              status.state === "error" || status.state === "guard_paused" ? "text-error" :
               "text-text-muted"
             }>
-              {status.state}
+              {status.state === "guard_paused" ? "paused (loop guard)" : status.state}
             </span>
           </span>
           <span>

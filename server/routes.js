@@ -1926,17 +1926,23 @@ router.post("/api/planning-loop/start", (req, res) => {
   }
 
   const timer = setInterval(() => {
+    if (fileChat.isLoopGuardPaused(projectId)) {
+      const info = _planningLoopTimers.get(projectId);
+      if (info) { info.guardPaused = true; info.nextPulse = Date.now() + intervalMs; }
+      return;
+    }
     sendPlanningPulse(projectId, null, fileChat);
     const now = Date.now();
     _planningLoopLastPulse.set(projectId, now);
     const info = _planningLoopTimers.get(projectId);
-    if (info) { info.lastPulse = now; info.nextPulse = now + intervalMs; }
+    if (info) { info.lastPulse = now; info.nextPulse = now + intervalMs; info.guardPaused = false; }
   }, intervalMs);
 
   _planningLoopTimers.set(projectId, {
     timer,
     intervalMin,
     intervalMs,
+    guardPaused: false,
     startedAt: Date.now(),
     lastPulse: null,
     nextPulse: Date.now() + intervalMs,
@@ -1966,12 +1972,14 @@ router.get("/api/planning-loop/status", (req, res) => {
   if (!info) {
     return res.json({ enabled: false, state: "paused", intervalMin: null, lastPulse: persistedLastPulse, nextPulse: null });
   }
+  const liveGuardPaused = fileChat.isLoopGuardPaused(projectId);
   return res.json({
     enabled: true,
-    state: "running",
+    state: liveGuardPaused ? "guard_paused" : "running",
     intervalMin: info.intervalMin,
     lastPulse: info.lastPulse || persistedLastPulse,
     nextPulse: info.nextPulse,
+    guardPaused: liveGuardPaused,
   });
 });
 
