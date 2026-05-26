@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import InfoTooltip from "./InfoTooltip";
 import OvernightQueueModal from "./OvernightQueueModal";
-import BatchProgressPanel from "./BatchProgressPanel";
+import PlanningProgressPanel from "./PlanningProgressPanel";
 import { useLocale } from "@/components/LocaleProvider";
 
 const COPY = {
@@ -399,7 +399,7 @@ export default function GitHubPanel({ projectId }: GitHubPanelProps) {
           between the issues/PRs lists and the OVERNIGHT-QUEUE.md
           row. Reads /api/batch-progress on its own 30s cadence. */}
       <div className="shrink-0">
-        <BatchProgressPanel projectId={projectId} />
+        <PlanningProgressPanel projectId={projectId} />
       </div>
 
       {/* #226: compact OVERNIGHT-QUEUE.md row at the bottom */}
