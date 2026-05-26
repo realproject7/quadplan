@@ -86,3 +86,5 @@ function wrap(body, batchLine = "**Batch:** 33") {
 }
 
 console.log("routes.parseActiveBatch.test.js: all assertions passed (6 cases)");
+const { _testCleanup } = require("./routes");
+if (_testCleanup) _testCleanup();

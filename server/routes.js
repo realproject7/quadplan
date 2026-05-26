@@ -3034,3 +3034,12 @@ module.exports.setPtyDispatchCallback = setPtyDispatchCallback;
 module.exports.seedProjectWorkspace = seedProjectWorkspace;
 module.exports.seedProjectRuntime = seedProjectRuntime;
 module.exports.PROJECT_AGENTS = PROJECT_AGENTS;
+module.exports._testCleanup = function () {
+  for (const [, info] of _planningLoopTimers) {
+    if (info.timer) clearInterval(info.timer);
+  }
+  _planningLoopTimers.clear();
+  _planningLoopLastPulse.clear();
+  if (_rateLimitTimer) { clearInterval(_rateLimitTimer); _rateLimitTimer = null; }
+  if (_graphqlPollTimer) { clearInterval(_graphqlPollTimer); _graphqlPollTimer = null; }
+};
