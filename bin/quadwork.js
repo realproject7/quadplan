@@ -531,8 +531,8 @@ async function setupAgents(rl, repo) {
   }
   const backend = defaultBackend;
 
-  log("Path to your local clone of the repo. Four worktrees will be created next to it");
-  log("(e.g., project-head/, project-re1/, project-re2/, project-dev/).");
+  log("Path to your local clone of the repo. Three worktrees will be created next to it");
+  log("(e.g., project-head/, project-re1/, project-re2/).");
   const projectDir = await ask(rl, "Project directory", process.cwd());
   const absDir = path.resolve(projectDir);
 
