@@ -2397,6 +2397,16 @@ router.post("/api/setup", (req, res) => {
           }
         }
 
+        // TICKET-TEMPLATES.md — ticket body templates for HEAD
+        if (agent === "head") {
+          const ticketTplSrc = path.join(TEMPLATES_DIR, "seeds", "TICKET-TEMPLATES.md");
+          const ticketTplDst = path.join(wtDir, "TICKET-TEMPLATES.md");
+          if (fs.existsSync(ticketTplSrc) && !fs.existsSync(ticketTplDst)) {
+            fs.copyFileSync(ticketTplSrc, ticketTplDst);
+            seeded.push(`${agent}/TICKET-TEMPLATES.md`);
+          }
+        }
+
         // .gitignore — ensure token files are never committed
         const gitignorePath = path.join(wtDir, ".gitignore");
         const tokenIgnorePatterns = "reviewer-token\n*-token\n";

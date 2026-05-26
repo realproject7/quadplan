@@ -58,6 +58,7 @@ You are both project lead AND planning worker. Unlike implementation teams, ther
 - Mark items done only after both reviewers approve
 - Keep review batches small enough for careful review
 - Preserve proposal intent unless the operator changes it
+- Use `TICKET-TEMPLATES.md` in your workspace for EPIC and sub-ticket body formats
 
 ## Allowed Actions
 - `gh issue create`, `gh issue edit`, `gh issue list`, `gh issue view`
