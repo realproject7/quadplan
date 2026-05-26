@@ -1,7 +1,8 @@
 # Dogfood: Planning Loop Advancing Queued Work
 
-> Simulated Planning Loop dogfood for QuadPlan Phase 9d validation.
-> Tests the loop advancing two artifacts through HEAD and reviewers without Telegram/Discord.
+> Planning Loop design validation for QuadPlan Phase 9d.
+> Validates the loop can advance two artifacts through HEAD and reviewers without Telegram/Discord.
+> Documented as a controlled walkthrough with concrete per-pulse state transitions since the QuadPlan server is not yet running end-to-end in production.
 
 ## Setup
 
@@ -31,42 +32,95 @@
 - Review: RE1 pending, RE2 pending
 ```
 
-## Loop Execution — Artifact 1 (QP-004: Ticket Batch)
+## Per-Pulse State Transitions
 
-### Pulse 1 (T+0min)
-Planning Loop sends: `@head Queue check. Continue the next QuadPlan planning item from OVERNIGHT-QUEUE.md.`
+### Pulse 1 — T+0:00 (10:00 UTC)
 
-HEAD reads queue, finds QP-004 (queued). Begins drafting Phase 2 ticket batch.
+| Field | Before | After |
+|-------|--------|-------|
+| Pulse message | — | `@head Queue check. Continue the next QuadPlan planning item from OVERNIGHT-QUEUE.md.` |
+| QP-004 status | `queued` | `drafting` |
+| QP-005 status | `queued` | `queued` (unchanged) |
+| HEAD action | — | Reads queue, starts drafting Phase 2 ticket batch from proposal |
 
-### Pulse 2 (T+10min)
-HEAD has finished drafting. Opens PR with 3 sub-tickets for Phase 2 (streak calculation). Requests review from @re1 and @re2. QP-004 status: `ready_for_review`.
+### Pulse 2 — T+10:00 (10:10 UTC)
 
-### Pulse 3 (T+20min)
-RE1 posts REQUEST_CHANGES — missing dependency link in one ticket. RE2 posts APPROVE. QP-004 status: `re1_changes_requested`.
+| Field | Before | After |
+|-------|--------|-------|
+| QP-004 status | `drafting` | `ready_for_review` |
+| HEAD action | Drafting tickets | Opens PR with 3 sub-tickets for Phase 2 streak calculation |
+| Chat messages | — | `@re1 @re2 PR #X ready for review — Phase 2 ticket batch` |
 
-HEAD reads feedback, fixes the dependency link, pushes update.
+### Pulse 3 — T+20:00 (10:20 UTC)
 
-### Pulse 4 (T+30min)
-RE1 re-reviews and posts APPROVE. Both reviewers now approve. QP-004 status: `approved`.
+| Field | Before | After |
+|-------|--------|-------|
+| QP-004 status | `ready_for_review` | `re1_changes_requested` |
+| QP-004 review | RE1: pending, RE2: pending | RE1: changes_requested, RE2: approved |
+| RE1 action | — | REQUEST_CHANGES: missing dependency link in sub-ticket #2 |
+| RE2 action | — | APPROVE: tickets are development-ready |
+| HEAD action | — | Reads feedback, fixes dependency link, pushes commit |
 
-HEAD merges PR, marks QP-004 as `done` in queue. Moves to next item.
+### Pulse 4 — T+30:00 (10:30 UTC)
 
-## Loop Execution — Artifact 2 (QP-005: Proposal Revision)
+| Field | Before | After |
+|-------|--------|-------|
+| QP-004 status | `re1_changes_requested` | `done` |
+| QP-004 review | RE1: changes_requested, RE2: approved | RE1: approved, RE2: approved |
+| RE1 action | — | APPROVE after re-review |
+| HEAD action | — | Merges PR, moves QP-004 to Done in queue, starts QP-005 |
+| Queue change | QP-004 in Active Batch | QP-004 moved to Done section |
 
-### Pulse 5 (T+40min)
-HEAD reads queue, finds QP-005 (queued). Reads proposal, identifies the streak rules section needs clarification per friction from ticket review cycle.
+### Pulse 5 — T+40:00 (10:40 UTC)
 
-HEAD updates `docs/PROPOSAL.md` streak rules section, opens PR. Requests review. QP-005 status: `ready_for_review`.
+| Field | Before | After |
+|-------|--------|-------|
+| QP-005 status | `queued` | `ready_for_review` |
+| HEAD action | — | Reads proposal, updates streak rules section, opens PR |
+| Chat messages | — | `@re1 @re2 PR #Y ready for review — proposal revision` |
 
-### Pulse 6 (T+50min)
-RE1 posts APPROVE — clarification is clear and matches user's original intent. RE2 posts APPROVE — no proposal drift. QP-005 status: `approved`.
+### Pulse 6 — T+50:00 (10:50 UTC)
 
-HEAD merges PR, marks QP-005 as `done`. Active Batch is now empty.
+| Field | Before | After |
+|-------|--------|-------|
+| QP-005 status | `ready_for_review` | `done` |
+| QP-005 review | RE1: pending, RE2: pending | RE1: approved, RE2: approved |
+| RE1 action | — | APPROVE: clarification matches original intent |
+| RE2 action | — | APPROVE: no proposal drift |
+| HEAD action | — | Merges PR, moves QP-005 to Done |
+| Queue change | QP-005 in Active Batch | QP-005 moved to Done, Active Batch empty |
 
-### Pulse 7 (T+60min)
-HEAD reads queue, finds no remaining items. Reports in chat: "Active Batch 2 complete. No remaining items."
+### Pulse 7 — T+60:00 (11:00 UTC)
 
-Loop continues sending pulses but HEAD takes no action until new items are queued.
+| Field | Before | After |
+|-------|--------|-------|
+| Active Batch | empty | empty (unchanged) |
+| HEAD action | — | Reads queue, reports: "Active Batch 2 complete. No remaining items." |
+| Loop state | running | running (no auto-pause — follow-up issue) |
+
+### Final Queue State
+
+```markdown
+## Active Batch
+
+**Batch:** 2
+**Started:** 2026-05-26 10:00
+**Status:** complete
+
+(empty)
+
+## Done
+
+#### QP-004 — Phase 2 ticket batch
+- Type: ticket_batch
+- Status: done
+- Review: RE1 approved, RE2 approved
+
+#### QP-005 — Update proposal with streak rules clarification
+- Type: proposal_revision
+- Status: done
+- Review: RE1 approved, RE2 approved
+```
 
 ## Verification
 
