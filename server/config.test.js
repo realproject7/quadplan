@@ -130,6 +130,32 @@ describe("QuadPlan config schema", () => {
     assert.equal(resolveAgentCwd("nodev", "dev"), null);
   });
 
+  it("no-dev project config: Object.keys(agents) returns exactly head/re1/re2", () => {
+    const { readConfig, writeConfig, CONFIG_PATH } = freshConfig();
+    const cfg = {
+      port: 8400,
+      operator_name: "user",
+      butler: { enabled: false, cwd: null, command: null },
+      projects: [
+        {
+          id: "threeagent",
+          name: "Three Agent Project",
+          agents: {
+            head: { cwd: "/tmp/ta-head", command: "claude" },
+            re1: { cwd: "/tmp/ta-re1", command: "claude" },
+            re2: { cwd: "/tmp/ta-re2", command: "codex" },
+          },
+        },
+      ],
+    };
+    fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
+    writeConfig(cfg);
+    const loaded = readConfig();
+    const agentIds = Object.keys(loaded.projects[0].agents);
+    assert.deepEqual(agentIds.sort(), ["head", "re1", "re2"]);
+    assert.ok(!agentIds.includes("dev"));
+  });
+
   it("resolveButlerConfig returns butler settings", () => {
     const { writeConfig, resolveButlerConfig, CONFIG_PATH } = freshConfig();
     const cfg = {
