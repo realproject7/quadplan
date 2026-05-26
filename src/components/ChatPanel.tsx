@@ -20,12 +20,12 @@ interface Message {
 }
 
 const SENDER_COLORS: Record<string, string> = {
-  head: "#00ff88",
+  head: "#ff2bd6",
   re1: "#4488ff",
   re2: "#cc44ff",
   dev: "#ffcc00",
-  user: "#e0e0e0",
-  system: "#737373",
+  user: "#e8e2e8",
+  system: "#8a7f8a",
 };
 
 const AGENTS = ["head", "re1", "re2", "dev", "user"];
