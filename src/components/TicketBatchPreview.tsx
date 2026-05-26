@@ -36,11 +36,12 @@ export default function TicketBatchPreview({ projectId, artifactPath, issueLinks
   const [draftContent, setDraftContent] = useState<string | null>(null);
 
   const loadDraft = useCallback(() => {
+    setDraftContent(null);
     if (!artifactPath) return;
     fetch(`/api/artifact-preview?project=${encodeURIComponent(projectId)}&path=${encodeURIComponent(artifactPath)}`)
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.content) setDraftContent(d.content); })
-      .catch(() => {});
+      .then((d) => { setDraftContent(d?.content ?? null); })
+      .catch(() => { setDraftContent(null); });
   }, [projectId, artifactPath]);
 
   useEffect(() => { loadDraft(); }, [loadDraft]);
