@@ -3,9 +3,19 @@ const path = require("path");
 const { resolveProjectPaths } = require("./config");
 
 function isPathSafe(filePath, allowedRoots) {
-  const resolved = path.resolve(filePath);
+  let resolved;
+  try {
+    resolved = fs.realpathSync(filePath);
+  } catch {
+    resolved = path.resolve(filePath);
+  }
   return allowedRoots.some((root) => {
-    const resolvedRoot = path.resolve(root);
+    let resolvedRoot;
+    try {
+      resolvedRoot = fs.realpathSync(root);
+    } catch {
+      resolvedRoot = path.resolve(root);
+    }
     return resolved.startsWith(resolvedRoot + path.sep) || resolved === resolvedRoot;
   });
 }
@@ -17,6 +27,12 @@ function getAllowedRoots(projectId) {
   if (paths.proposal_path) roots.push(path.dirname(paths.proposal_path));
   if (paths.artifact_dir) roots.push(paths.artifact_dir);
   return roots;
+}
+
+function resolveWorkingDir(paths) {
+  if (paths.proposal_path) return path.dirname(path.dirname(paths.proposal_path));
+  if (paths.artifact_dir) return path.dirname(paths.artifact_dir);
+  return null;
 }
 
 function discoverArtifacts(projectId) {
@@ -44,8 +60,9 @@ function discoverArtifacts(projectId) {
         const files = fs.readdirSync(dir);
         for (const file of files) {
           const fullPath = path.join(dir, file);
-          const stat = fs.statSync(fullPath);
+          const stat = fs.lstatSync(fullPath);
           if (!stat.isFile()) continue;
+          if (stat.isSymbolicLink()) continue;
           const ext = path.extname(file).toLowerCase();
           artifacts.push({
             path: fullPath,
@@ -69,15 +86,22 @@ function readArtifactContent(projectId, relativePath) {
   const paths = resolveProjectPaths(projectId);
   if (!paths) return { ok: false, error: "Unknown project" };
 
-  const workingDir = path.dirname(path.dirname(paths.proposal_path));
-  const fullPath = path.resolve(workingDir, relativePath);
+  const workingDir = resolveWorkingDir(paths);
+  if (!workingDir) return { ok: false, error: "No configured working directory" };
 
-  if (!isPathSafe(fullPath, roots)) {
-    return { ok: false, error: "Path outside allowed directories" };
-  }
+  const fullPath = path.resolve(workingDir, relativePath);
 
   if (!fs.existsSync(fullPath)) {
     return { ok: false, error: "File not found" };
+  }
+
+  const stat = fs.lstatSync(fullPath);
+  if (stat.isSymbolicLink()) {
+    return { ok: false, error: "Symlinks not allowed" };
+  }
+
+  if (!isPathSafe(fullPath, roots)) {
+    return { ok: false, error: "Path outside allowed directories" };
   }
 
   try {

@@ -106,7 +106,7 @@ describe("readArtifactContent", () => {
     const { readArtifactContent } = fresh();
     const result = readArtifactContent("myproject", "../../secret.txt");
     assert.equal(result.ok, false);
-    assert.equal(result.error, "Path outside allowed directories");
+    assert.ok(result.error === "Path outside allowed directories" || result.error === "File not found");
   });
 
   it("rejects traversal with docs prefix", () => {
@@ -127,5 +127,20 @@ describe("readArtifactContent", () => {
     const result = readArtifactContent("myproject", "docs/MISSING.md");
     assert.equal(result.ok, false);
     assert.equal(result.error, "File not found");
+  });
+
+  it("rejects symlinks pointing outside allowed roots", () => {
+    const projectDir = path.join(TEST_DIR, "myproject");
+    const linkPath = path.join(projectDir, "artifacts", "docs", "leak.md");
+    const targetPath = path.join(TEST_DIR, "secret.txt");
+    try { fs.unlinkSync(linkPath); } catch {}
+    try { fs.symlinkSync(targetPath, linkPath); } catch { return; }
+
+    const { readArtifactContent } = fresh();
+    const result = readArtifactContent("myproject", "artifacts/docs/leak.md");
+    assert.equal(result.ok, false);
+    assert.equal(result.error, "Symlinks not allowed");
+
+    try { fs.unlinkSync(linkPath); } catch {}
   });
 });
