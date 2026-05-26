@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import ArtifactPreview from "./ArtifactPreview";
+import TicketBatchPreview from "./TicketBatchPreview";
 import InfoTooltip from "./InfoTooltip";
 import { useLocale } from "@/components/LocaleProvider";
 
@@ -100,7 +101,11 @@ export default function ArtifactBrowser({ projectId }: ArtifactBrowserProps) {
 
         {/* Preview pane */}
         <div className="flex-1 min-w-0">
-          <ArtifactPreview projectId={projectId} artifactPath={selected} />
+          {selected && artifacts.find((a) => a.relativePath === selected)?.type === "ticket" ? (
+            <TicketBatchPreview projectId={projectId} artifactPath={selected} />
+          ) : (
+            <ArtifactPreview projectId={projectId} artifactPath={selected} />
+          )}
         </div>
       </div>
     </div>
