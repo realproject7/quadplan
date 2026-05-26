@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useLocale } from "@/components/LocaleProvider";
 
 interface ArtifactPreviewProps {
@@ -121,7 +122,7 @@ export default function ArtifactPreview({ projectId, artifactPath }: ArtifactPre
         prose-a:text-accent prose-a:no-underline hover:prose-a:underline
         prose-strong:text-text prose-em:text-text-muted
       ">
-        <Markdown>{content}</Markdown>
+        <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
       </div>
     </div>
   );

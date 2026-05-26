@@ -5,6 +5,7 @@ import PanelHeader from "./PanelHeader";
 import InfoTooltip from "./InfoTooltip";
 import ChatPanel from "./ChatPanel";
 import GitHubPanel from "./GitHubPanel";
+import ArtifactBrowser from "./ArtifactBrowser";
 import ControlBar from "./ControlBar";
 import AgentTerminalsGrid from "./AgentTerminalsGrid";
 import OperatorFeaturesPanel from "./OperatorFeaturesPanel";
@@ -274,8 +275,11 @@ export default function ProjectDashboard({ projectId }: ProjectDashboardProps) {
               {t.githubTooltip}
             </InfoTooltip>
           } />
-          <div className="flex-1 min-h-0">
-            <GitHubPanel projectId={projectId} />
+          <div className="flex-1 min-h-0 flex flex-col gap-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <GitHubPanel projectId={projectId} />
+            </div>
+            <ArtifactBrowser projectId={projectId} />
           </div>
         </div>
 
