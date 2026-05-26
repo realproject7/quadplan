@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-const CONFIG_DIR = path.join(os.homedir(), ".quadwork");
+const { CONFIG_DIR } = require("../config");
 
 const instances = new Map();
 

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { ensureSecureDir, writeSecureFile } = require("./config");
+const { CONFIG_DIR, ensureSecureDir, writeSecureFile } = require("./config");
 
 const MENTION_RE = /@(\w[\w-]*)/g;
 
@@ -16,7 +16,7 @@ function getState(projectId) {
 }
 
 function chatDir(projectId) {
-  return path.join(os.homedir(), ".quadwork", projectId, "chat");
+  return path.join(CONFIG_DIR, projectId, "chat");
 }
 
 function chatFile(projectId) {

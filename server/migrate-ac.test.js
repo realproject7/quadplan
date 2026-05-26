@@ -67,7 +67,7 @@ process.on("exit", cleanup);
 // --- Test: round-trip migration ---
 {
   const projectId = "test-roundtrip";
-  const acDataDir = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data");
+  const acDataDir = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data");
   fs.mkdirSync(acDataDir, { recursive: true });
 
   const acRecords = [
@@ -83,7 +83,7 @@ process.on("exit", cleanup);
   assert.equal(result.messages, 3);
   assert.equal(result.skipped, 0);
 
-  const chatDir = path.join(TEST_DIR, ".quadwork", projectId, "chat");
+  const chatDir = path.join(TEST_DIR, ".quadplan", projectId, "chat");
   const outputPath = path.join(chatDir, "general.jsonl");
   assert.ok(fs.existsSync(outputPath), "general.jsonl should exist");
 
@@ -119,7 +119,7 @@ process.on("exit", cleanup);
 // --- Test: invalid lines are skipped ---
 {
   const projectId = "test-invalid-lines";
-  const acDataDir = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data");
+  const acDataDir = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data");
   fs.mkdirSync(acDataDir, { recursive: true });
 
   const acContent = [
@@ -148,11 +148,11 @@ process.on("exit", cleanup);
 // --- Test: existing general.jsonl without .migrated skips ---
 {
   const projectId = "test-phase1";
-  const chatDir = path.join(TEST_DIR, ".quadwork", projectId, "chat");
+  const chatDir = path.join(TEST_DIR, ".quadplan", projectId, "chat");
   fs.mkdirSync(chatDir, { recursive: true });
   fs.writeFileSync(path.join(chatDir, "general.jsonl"), '{"id":0}\n');
 
-  const acDataDir = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data");
+  const acDataDir = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data");
   fs.mkdirSync(acDataDir, { recursive: true });
   fs.writeFileSync(path.join(acDataDir, "agentchattr_log.jsonl"), '{"id":0,"sender":"user","text":"test","type":"chat","timestamp":1}\n');
 
@@ -164,7 +164,7 @@ process.on("exit", cleanup);
 // --- Test: AC log with only invalid lines is skipped ---
 {
   const projectId = "test-all-invalid";
-  const acDataDir = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data");
+  const acDataDir = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data");
   fs.mkdirSync(acDataDir, { recursive: true });
 
   const acContent = "not json\nalso not json\n{broken\n";
@@ -173,7 +173,7 @@ process.on("exit", cleanup);
   const result = migrateProject(projectId);
   assert.equal(result, null, "should skip when all lines are invalid");
 
-  const chatDir = path.join(TEST_DIR, ".quadwork", projectId, "chat");
+  const chatDir = path.join(TEST_DIR, ".quadplan", projectId, "chat");
   assert.ok(!fs.existsSync(path.join(chatDir, "general.jsonl")), "should not create general.jsonl");
   assert.ok(!fs.existsSync(path.join(chatDir, ".migrated")), "should not create .migrated");
   console.log("PASS: AC log with only invalid lines is skipped gracefully");

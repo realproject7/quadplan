@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
-const { ensureSecureDir } = require("./config");
+const { CONFIG_DIR, ensureSecureDir } = require("./config");
 
 function convertToAcFormat(record) {
   const acRecord = {
@@ -29,10 +29,10 @@ function contentHash(record) {
 }
 
 function restoreProject(projectId) {
-  const chatFile = path.join(os.homedir(), ".quadwork", projectId, "chat", "general.jsonl");
+  const chatFile = path.join(CONFIG_DIR, projectId, "chat", "general.jsonl");
   if (!fs.existsSync(chatFile)) return null;
 
-  const acDataDir = path.join(os.homedir(), ".quadwork", projectId, "agentchattr", "data");
+  const acDataDir = path.join(CONFIG_DIR, projectId, "agentchattr", "data");
   const acLogPath = path.join(acDataDir, "agentchattr_log.jsonl");
 
   const existingHashes = new Set();

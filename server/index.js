@@ -6,7 +6,7 @@ const os = require("os");
 const { WebSocketServer, WebSocket } = require("ws");
 const pty = require("node-pty");
 const { spawn } = require("child_process");
-const { readConfig, resolveAgentCwd, resolveAgentCommand, CONFIG_PATH, ensureSecureDir, writeSecureFile, writeConfig } = require("./config");
+const { readConfig, resolveAgentCwd, resolveAgentCommand, CONFIG_DIR, CONFIG_PATH, ensureSecureDir, writeSecureFile, writeConfig } = require("./config");
 const routes = require("./routes");
 const fileChat = require("./file-chat");
 const { dispatchToAgentPTY, cleanupSession: cleanupPtyDispatcher } = require("./pty-dispatcher");
@@ -279,7 +279,7 @@ const PERMISSION_FLAGS = {
  * deregister returns 403 (app.py:2123-2135).
  */
 function _agentTokenPath(projectId, agentId) {
-  const configDir = path.join(os.homedir(), ".quadwork", projectId);
+  const configDir = path.join(CONFIG_DIR, projectId);
   return path.join(configDir, `agent-token-${agentId}.txt`);
 }
 
@@ -293,7 +293,7 @@ function readPersistedAgentToken(projectId, agentId) {
 
 function writePersistedAgentToken(projectId, agentId, token) {
   try {
-    const configDir = path.join(os.homedir(), ".quadwork", projectId);
+    const configDir = path.join(CONFIG_DIR, projectId);
     ensureSecureDir(configDir);
     writeSecureFile(_agentTokenPath(projectId, agentId), token);
   } catch {
@@ -307,7 +307,7 @@ function clearPersistedAgentToken(projectId, agentId) {
 
 function writeMcpConfigFile(projectId, agentId, mcpHttpPort, token) {
   const os = require("os");
-  const configDir = path.join(os.homedir(), ".quadwork", projectId);
+  const configDir = path.join(CONFIG_DIR, projectId);
   ensureSecureDir(configDir);
   const filePath = path.join(configDir, `mcp-${agentId}.json`);
   const url = `http://127.0.0.1:${mcpHttpPort}/mcp`;
@@ -327,7 +327,7 @@ function writeMcpConfigFile(projectId, agentId, mcpHttpPort, token) {
 function writeFileChatMcpConfig(projectId, agentId, serverPort) {
   const os = require("os");
   const crypto = require("crypto");
-  const configDir = path.join(os.homedir(), ".quadwork", projectId);
+  const configDir = path.join(CONFIG_DIR, projectId);
   ensureSecureDir(configDir);
   const filePath = path.join(configDir, `mcp-${agentId}.json`);
   const shimPath = path.join(__dirname, "mcp-chat-shim.js");
@@ -425,7 +425,7 @@ function buildAgentEnv(projectId, agentId) {
   // Gemini: inject MCP via env var
   if (cliBase === "gemini") {
     const os = require("os");
-    const configDir = path.join(os.homedir(), ".quadwork", projectId);
+    const configDir = path.join(CONFIG_DIR, projectId);
     ensureSecureDir(configDir);
     const settingsPath = path.join(configDir, `mcp-${agentId}-settings.json`);
 
@@ -1278,7 +1278,7 @@ app.post("/api/triggers/sync", (_req, res) => {
 app.set("syncTriggers", syncTriggersFromConfig);
 
 // --- OVERNIGHT-QUEUE.md viewer/editor (#209) ---------------------------------
-// Read/write the per-project ~/.quadwork/{id}/OVERNIGHT-QUEUE.md file from
+// Read/write the per-project ~/.quadplan/{id}/OVERNIGHT-QUEUE.md file from
 // the operator panel. The id must resolve to a project already saved in
 // config.json — we never touch an arbitrary path on disk.
 function resolveQueueProject(projectId) {
@@ -1288,7 +1288,7 @@ function resolveQueueProject(projectId) {
   return (cfg.projects || []).find((p) => p.id === projectId) || null;
 }
 function queuePathFor(projectId) {
-  return path.join(os.homedir(), ".quadwork", projectId, "OVERNIGHT-QUEUE.md");
+  return path.join(CONFIG_DIR, projectId, "OVERNIGHT-QUEUE.md");
 }
 const OVERNIGHT_TEMPLATES_DIR = path.resolve(__dirname, "..", "templates");
 

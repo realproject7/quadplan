@@ -46,7 +46,7 @@ process.on("exit", cleanup);
 // --- Test: basic restore ---
 {
   const projectId = "test-restore";
-  const chatDir = path.join(TEST_DIR, ".quadwork", projectId, "chat");
+  const chatDir = path.join(TEST_DIR, ".quadplan", projectId, "chat");
   fs.mkdirSync(chatDir, { recursive: true });
 
   const records = [
@@ -59,7 +59,7 @@ process.on("exit", cleanup);
   assert.ok(result);
   assert.equal(result.restored, 2);
 
-  const acLogPath = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data", "agentchattr_log.jsonl");
+  const acLogPath = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data", "agentchattr_log.jsonl");
   assert.ok(fs.existsSync(acLogPath));
   const acLines = fs.readFileSync(acLogPath, "utf-8").trim().split("\n");
   assert.equal(acLines.length, 2);
@@ -78,7 +78,7 @@ process.on("exit", cleanup);
   assert.equal(result.restored, 0);
   assert.equal(result.skipped, 2);
 
-  const acLogPath = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data", "agentchattr_log.jsonl");
+  const acLogPath = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data", "agentchattr_log.jsonl");
   const acLines = fs.readFileSync(acLogPath, "utf-8").trim().split("\n");
   assert.equal(acLines.length, 2, "no duplicates");
   console.log("PASS: re-running ac-restore produces no duplicates");
@@ -87,7 +87,7 @@ process.on("exit", cleanup);
 // --- Test: skips migration system messages ---
 {
   const projectId = "test-skip-sysmsg";
-  const chatDir = path.join(TEST_DIR, ".quadwork", projectId, "chat");
+  const chatDir = path.join(TEST_DIR, ".quadplan", projectId, "chat");
   fs.mkdirSync(chatDir, { recursive: true });
 
   const records = [
@@ -105,7 +105,7 @@ process.on("exit", cleanup);
 // --- Test: round-trip (AC → migrate → ac-restore → migrate) is field-stable ---
 {
   const projectId = "test-roundtrip";
-  const acDataDir = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data");
+  const acDataDir = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data");
   fs.mkdirSync(acDataDir, { recursive: true });
 
   const originalAc = [
@@ -117,7 +117,7 @@ process.on("exit", cleanup);
   // Step 1: migrate AC → file-chat
   migrateProject(projectId);
 
-  const chatFile = path.join(TEST_DIR, ".quadwork", projectId, "chat", "general.jsonl");
+  const chatFile = path.join(TEST_DIR, ".quadplan", projectId, "chat", "general.jsonl");
   const migratedLines = fs.readFileSync(chatFile, "utf-8").trim().split("\n");
   const migratedRecords = migratedLines.map((l) => JSON.parse(l));
 
@@ -155,8 +155,8 @@ process.on("exit", cleanup);
 // --- Test: content hash dedup against existing AC records ---
 {
   const projectId = "test-hash-dedup";
-  const chatDir = path.join(TEST_DIR, ".quadwork", projectId, "chat");
-  const acDataDir = path.join(TEST_DIR, ".quadwork", projectId, "agentchattr", "data");
+  const chatDir = path.join(TEST_DIR, ".quadplan", projectId, "chat");
+  const acDataDir = path.join(TEST_DIR, ".quadplan", projectId, "agentchattr", "data");
   fs.mkdirSync(chatDir, { recursive: true });
   fs.mkdirSync(acDataDir, { recursive: true });
 

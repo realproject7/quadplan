@@ -2,16 +2,23 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-const CONFIG_PATH = path.join(os.homedir(), ".quadwork", "config.json");
+const CONFIG_DIR = path.join(os.homedir(), ".quadplan");
+const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
 
 const DEFAULT_CONFIG = {
   port: 8400,
   operator_name: "user",
+  butler: {
+    enabled: false,
+    cwd: null,
+    command: null,
+  },
   projects: [],
 };
 
 // Reserved sender names that the operator must NOT be able to claim.
 const RESERVED_OPERATOR_NAMES = new Set([
+  "butler",
   "head",
   "dev",
   "re1",
@@ -114,6 +121,22 @@ function resolveAgentCommand(projectId, agentId) {
   return agent.command;
 }
 
+function resolveButlerConfig() {
+  const config = readConfig();
+  return config.butler || DEFAULT_CONFIG.butler;
+}
+
+function resolveProjectPaths(projectId) {
+  const config = readConfig();
+  const project = config.projects.find((p) => p.id === projectId);
+  if (!project) return null;
+  return {
+    proposal_path: project.proposal_path || null,
+    queue_path: project.queue_path || path.join(CONFIG_DIR, projectId, "OVERNIGHT-QUEUE.md"),
+    artifact_dir: project.artifact_dir || null,
+  };
+}
+
 /**
  * Resolve AgentChattr connection for a project (per-project → global fallback).
  */
@@ -124,7 +147,7 @@ function resolveProjectChattr(projectId) {
   // Resolution order for AgentChattr install dir:
   //   1. project.agentchattr_dir   — per-project clone (Option B, #181)
   //   2. config.agentchattr_dir    — legacy global clone (v1 backward compat)
-  //   3. ~/.quadwork/{projectId}/agentchattr — per-project default
+  //   3. ~/.quadplan/{projectId}/agentchattr — per-project default
   //
   // Phase 1A (#182) is schema-only: project.agentchattr_dir is now written
   // on every new project, but the actual clone-on-create logic does not
@@ -133,9 +156,9 @@ function resolveProjectChattr(projectId) {
   // the legacy global so existing setups (and brand-new projects on a v1
   // host) keep starting AgentChattr from the working clone.
   const perProjectDefault = projectId
-    ? path.join(os.homedir(), ".quadwork", projectId, "agentchattr")
-    : path.join(os.homedir(), ".quadwork", "agentchattr");
-  const legacyGlobal = config.agentchattr_dir || path.join(os.homedir(), ".quadwork", "agentchattr");
+    ? path.join(CONFIG_DIR, projectId, "agentchattr")
+    : path.join(CONFIG_DIR, "agentchattr");
+  const legacyGlobal = config.agentchattr_dir || path.join(CONFIG_DIR, "agentchattr");
   let dir = project?.agentchattr_dir || legacyGlobal || perProjectDefault;
   if (!fs.existsSync(path.join(dir, "run.py")) && fs.existsSync(path.join(legacyGlobal, "run.py"))) {
     dir = legacyGlobal;
@@ -151,7 +174,7 @@ function resolveProjectChattr(projectId) {
 }
 
 // --- #540: Secure file/directory helpers ---
-// All paths under ~/.quadwork/ may contain secrets (tokens, configs,
+// All paths under ~/.quadplan/ may contain secrets (tokens, configs,
 // chat exports). Use these helpers instead of raw fs calls to ensure
 // restrictive permissions on multi-user systems.
 
@@ -174,4 +197,4 @@ function writeConfig(cfg) {
   writeSecureFile(CONFIG_PATH, JSON.stringify(cfg, null, 2));
 }
 
-module.exports = { readConfig, resolveAgentCwd, resolveAgentCommand, resolveProjectChattr, sanitizeOperatorName, CONFIG_PATH, ensureSecureDir, writeSecureFile, writeConfig };
+module.exports = { readConfig, resolveAgentCwd, resolveAgentCommand, resolveButlerConfig, resolveProjectPaths, resolveProjectChattr, sanitizeOperatorName, CONFIG_DIR, CONFIG_PATH, ensureSecureDir, writeSecureFile, writeConfig };

@@ -4,7 +4,7 @@ const path = require("path");
 const os = require("os");
 
 const TEST_DIR = path.join(os.tmpdir(), `file-chat-test-${process.pid}-${Date.now()}`);
-const QUADWORK_DIR = path.join(TEST_DIR, ".quadwork");
+const QUADWORK_DIR = path.join(TEST_DIR, ".quadplan");
 
 // Override HOME so file-chat writes to temp dir
 const origHome = os.homedir;

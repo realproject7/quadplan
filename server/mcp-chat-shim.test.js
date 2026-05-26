@@ -181,7 +181,7 @@ async function runTests() {
   fileChat.shutdownProject(PROJECT);
 
   // Clean up test files
-  const testDir = path.join(os.homedir(), ".quadwork", PROJECT);
+  const testDir = path.join(os.homedir(), ".quadplan", PROJECT);
   try { fs.rmSync(testDir, { recursive: true }); } catch {}
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
