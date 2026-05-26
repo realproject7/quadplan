@@ -1888,6 +1888,7 @@ router.get("/api/planning-progress", (req, res) => {
 });
 
 const _planningLoopTimers = new Map();
+const _planningLoopLastPulse = new Map();
 
 router.post("/api/planning-loop/pulse", (req, res) => {
   const projectId = req.query.project || (req.body && req.body.project);
@@ -1901,6 +1902,7 @@ router.post("/api/planning-loop/pulse", (req, res) => {
   const result = sendPlanningPulse(projectId, customMessage, fileChat);
   if (!result.ok) return res.status(500).json(result);
   const now = Date.now();
+  _planningLoopLastPulse.set(projectId, now);
   const info = _planningLoopTimers.get(projectId);
   if (info) info.lastPulse = now;
   return res.json({ ok: true, sent: true, lastPulse: now });
@@ -1925,8 +1927,10 @@ router.post("/api/planning-loop/start", (req, res) => {
 
   const timer = setInterval(() => {
     sendPlanningPulse(projectId, null, fileChat);
+    const now = Date.now();
+    _planningLoopLastPulse.set(projectId, now);
     const info = _planningLoopTimers.get(projectId);
-    if (info) { info.lastPulse = Date.now(); info.nextPulse = Date.now() + intervalMs; }
+    if (info) { info.lastPulse = now; info.nextPulse = now + intervalMs; }
   }, intervalMs);
 
   _planningLoopTimers.set(projectId, {
@@ -1958,14 +1962,15 @@ router.get("/api/planning-loop/status", (req, res) => {
   if (!projectId) return res.status(400).json({ error: "Missing project" });
 
   const info = _planningLoopTimers.get(projectId);
+  const persistedLastPulse = _planningLoopLastPulse.get(projectId) || null;
   if (!info) {
-    return res.json({ enabled: false, state: "paused", intervalMin: null, lastPulse: null, nextPulse: null });
+    return res.json({ enabled: false, state: "paused", intervalMin: null, lastPulse: persistedLastPulse, nextPulse: null });
   }
   return res.json({
     enabled: true,
     state: "running",
     intervalMin: info.intervalMin,
-    lastPulse: info.lastPulse,
+    lastPulse: info.lastPulse || persistedLastPulse,
     nextPulse: info.nextPulse,
   });
 });
