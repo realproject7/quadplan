@@ -92,3 +92,5 @@ const { buildNoPrRow, summarizeItems } = require("./routes");
 }
 
 console.log("routes.batchProgress.test.js: all assertions passed (6 cases)");
+const { _testCleanup } = require("./routes");
+if (_testCleanup) _testCleanup();
