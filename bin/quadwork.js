@@ -636,6 +636,15 @@ async function setupAgents(rl, repo) {
     }
   }
 
+  // Copy TICKET-TEMPLATES.md to HEAD workspace
+  const ticketTplSrc = path.join(TEMPLATES_DIR, "seeds", "TICKET-TEMPLATES.md");
+  if (fs.existsSync(ticketTplSrc) && worktrees.head) {
+    const dst = path.join(worktrees.head, "TICKET-TEMPLATES.md");
+    if (!fs.existsSync(dst)) {
+      fs.copyFileSync(ticketTplSrc, dst);
+    }
+  }
+
   wtSpinner.stop(true);
 
   return { projectName, absDir, worktrees, repo, backend, backends };
