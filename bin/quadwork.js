@@ -625,6 +625,17 @@ async function setupAgents(rl, repo) {
     }
   }
 
+  // Copy REVIEW-FORMATS.md to reviewer workspaces
+  const reviewFmtSrc = path.join(TEMPLATES_DIR, "seeds", "REVIEW-FORMATS.md");
+  if (fs.existsSync(reviewFmtSrc)) {
+    for (const agent of ["re1", "re2"]) {
+      const dst = path.join(worktrees[agent], "REVIEW-FORMATS.md");
+      if (!fs.existsSync(dst)) {
+        fs.copyFileSync(reviewFmtSrc, dst);
+      }
+    }
+  }
+
   wtSpinner.stop(true);
 
   return { projectName, absDir, worktrees, repo, backend, backends };

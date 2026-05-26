@@ -2183,6 +2183,16 @@ router.post("/api/setup", (req, res) => {
           seeded.push(`${agent}/DESIGN-GUIDE.md`);
         }
 
+        // REVIEW-FORMATS.md — standardized review formats for RE1/RE2
+        if (agent === "re1" || agent === "re2") {
+          const reviewFmtSrc = path.join(TEMPLATES_DIR, "seeds", "REVIEW-FORMATS.md");
+          const reviewFmtDst = path.join(wtDir, "REVIEW-FORMATS.md");
+          if (fs.existsSync(reviewFmtSrc) && !fs.existsSync(reviewFmtDst)) {
+            fs.copyFileSync(reviewFmtSrc, reviewFmtDst);
+            seeded.push(`${agent}/REVIEW-FORMATS.md`);
+          }
+        }
+
         // .gitignore — ensure token files are never committed
         const gitignorePath = path.join(wtDir, ".gitignore");
         const tokenIgnorePatterns = "reviewer-token\n*-token\n";
