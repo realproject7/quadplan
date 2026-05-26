@@ -68,7 +68,7 @@ export default function ArtifactBrowser({ projectId }: ArtifactBrowserProps) {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 border border-border">
+    <div className="flex flex-col min-h-0 border border-border">
       <div className="flex items-center gap-1.5 h-7 px-3 shrink-0 border-b border-border">
         <span className="text-[10px] text-text-muted uppercase tracking-wider">{t.title}</span>
         <InfoTooltip>{t.tooltip}</InfoTooltip>

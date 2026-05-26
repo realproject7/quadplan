@@ -279,7 +279,9 @@ export default function ProjectDashboard({ projectId }: ProjectDashboardProps) {
             <div className="flex-1 min-h-0 overflow-hidden">
               <GitHubPanel projectId={projectId} />
             </div>
-            <ArtifactBrowser projectId={projectId} />
+            <div className="shrink-0 max-h-[40%]">
+              <ArtifactBrowser projectId={projectId} />
+            </div>
           </div>
         </div>
 
