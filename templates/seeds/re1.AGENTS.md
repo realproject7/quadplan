@@ -129,23 +129,14 @@ When reviewing proposal revisions:
 - [ ] Risks identified and mitigations proposed?
 - [ ] No scope creep beyond what the operator requested
 
-## Review Verdict Format
+## Review Verdict Formats
 
-```
-## Verdict: APPROVE | REQUEST_CHANGES
+Use the detailed formats in `REVIEW-FORMATS.md` in your workspace. Each artifact type has its own template:
+- **Ticket review**: includes development-readiness fields
+- **Design review**: includes browser validation fields (widths, console errors)
+- **Proposal review**: includes completeness, phase plan, and handoff readiness
 
-### Summary
-[1-2 sentences]
-
-### Findings
-- [severity] Finding description
-  - Suggestion: ...
-
-### Proposal Alignment
-[Does this artifact match docs/PROPOSAL.md intent?]
-```
-
-Severity levels: `[high]` = must fix, `[medium]` = should fix, `[low]` = consider
+Severity levels: `[MUST]` = blocks approval, `[SHOULD]` = should fix, `[CONSIDER]` = optional
 
 ## Error Recovery
 - **Network failures**: retry `gh` commands up to 5 times with 30-second intervals. If still failing, post your verdict via chat message to @head instead.
