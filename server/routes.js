@@ -14,6 +14,7 @@ const fileChat = require("./file-chat");
 const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
 const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
+const { sendPlanningPulse } = require("./planning-loop-pulse");
 
 const router = express.Router();
 
@@ -1884,6 +1885,20 @@ router.get("/api/planning-progress", (req, res) => {
   const summary = summarizeBatch(artifacts);
 
   return res.json({ batchNumber, batchTitle, artifacts: rows, summary });
+});
+
+router.post("/api/planning-loop/pulse", (req, res) => {
+  const projectId = req.query.project || (req.body && req.body.project);
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+
+  const { resolveProjectPaths } = require("./config");
+  const paths = resolveProjectPaths(projectId);
+  if (!paths) return res.status(404).json({ error: "Unknown project" });
+
+  const customMessage = req.body && req.body.message;
+  const result = sendPlanningPulse(projectId, customMessage);
+  if (!result.ok) return res.status(500).json(result);
+  return res.json({ ok: true, sent: true });
 });
 
 router.get("/api/batch-progress", async (req, res) => {
