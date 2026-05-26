@@ -639,7 +639,7 @@ export default function Sidebar() {
               style={{ transform: "translateY(-50%)", top: "auto" }}
             >
               {backendStatus === "offline"
-                ? "Backend offline — run quadplan start"
+                ? "Backend offline — run quadwork start"
                 : "Backend reconnected"}
             </div>
           )}

@@ -26,8 +26,8 @@ interface Repo {
 
 const COPY = {
   en: {
-    title: "Set Up Your AI Dev Team",
-    subtitle: "Configure agents, connect your repo, and launch a multi-agent development workflow in minutes.",
+    title: "Set Up Your Planning Team",
+    subtitle: "Configure agents, connect your repo, and launch a multi-agent planning workflow in minutes.",
     steps: {
       name: { label: "Project Name", subtitle: "Name your project" },
       repo: { label: "GitHub Repo", subtitle: "Connect a repository" },

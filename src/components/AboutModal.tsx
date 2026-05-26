@@ -56,7 +56,7 @@ export default function AboutModal({ open, onClose }: AboutModalProps) {
           <li>🛡️ <b>Always reviewed</b> — every artifact needs 2 independent approvals</li>
           <li>🔒 <b>Local-first</b> — runs entirely on your machine, no data leaves</li>
           <li>🧰 <b>Bring your own CLI</b> — works with Claude Code, Codex, or both</li>
-          <li>📦 <b>One install</b> — <code className="rounded bg-white/5 px-1 py-0.5 text-[12px]">npx quadplan init</code> and you&apos;re set</li>
+          <li>📦 <b>One install</b> — <code className="rounded bg-white/5 px-1 py-0.5 text-[12px]">npx quadwork init</code> and you&apos;re set</li>
         </ul>
 
         <div className="mt-5">
