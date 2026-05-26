@@ -14,6 +14,7 @@ interface ArtifactRow {
   review: { re1: string; re2: string };
   source: string | null;
   output: string | null;
+  issueUrl: string | null;
 }
 
 interface PlanningProgressData {
@@ -80,6 +81,7 @@ function ProgressBar({ percent }: { percent: number }) {
 }
 
 function artifactLink(artifact: ArtifactRow): string | null {
+  if (artifact.issueUrl) return artifact.issueUrl;
   if (!artifact.output) return null;
   if (artifact.output.startsWith("http://") || artifact.output.startsWith("https://")) return artifact.output;
   if (artifact.output.startsWith("/") || artifact.output.startsWith("artifacts/")) return artifact.output;

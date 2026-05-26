@@ -1869,8 +1869,14 @@ router.get("/api/planning-progress", (req, res) => {
   }
 
   const { batchNumber, batchTitle, artifacts } = parsePlanningQueue(text);
+  const repo = getRepo(projectId);
   const rows = artifacts.map((a) => {
     const effective = resolveEffectiveStatus(a);
+    let issueUrl = a.output || null;
+    if (!issueUrl && a.id.startsWith("#") && repo) {
+      const num = a.id.slice(1);
+      issueUrl = `https://github.com/${repo}/issues/${num}`;
+    }
     return {
       id: a.id,
       title: a.title,
@@ -1881,6 +1887,7 @@ router.get("/api/planning-progress", (req, res) => {
       review: a.review,
       source: a.source,
       output: a.output,
+      issueUrl,
     };
   });
   const summary = summarizeBatch(artifacts);
