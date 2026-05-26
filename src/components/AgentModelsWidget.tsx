@@ -101,7 +101,7 @@ const REASONING_LEVELS = ["minimal", "low", "medium", "high"] as const;
 // Empty string = use the CLI's own default (no -c / --model flag
 // passed at all). The lists below are the known-good slugs we
 // ship with this release; operators who need something bleeding
-// edge can still override by editing ~/.quadwork/config.json
+// edge can still override by editing ~/.quadplan/config.json
 // directly — this widget is the guided happy path.
 export const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
   codex: [

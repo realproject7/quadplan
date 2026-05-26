@@ -27,20 +27,20 @@ QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-confi
 
 **Symptom:** Chat messages fail to send or load. Agents report errors reading/writing chat files.
 
-**Cause:** The JSONL chat files at `~/.quadwork/<project>/chat/` aren't readable or writable by the QuadWork server process.
+**Cause:** The JSONL chat files at `~/.quadplan/<project>/chat/` aren't readable or writable by the QuadWork server process.
 
 **Fix:**
 1. Check file permissions on the chat directory and its files:
    ```bash
-   ls -la ~/.quadwork/<project>/chat/
+   ls -la ~/.quadplan/<project>/chat/
    ```
 2. Fix permissions:
    ```bash
-   chmod 600 ~/.quadwork/<project>/chat/*.jsonl
+   chmod 600 ~/.quadplan/<project>/chat/*.jsonl
    ```
 3. Ensure the directory itself is accessible:
    ```bash
-   chmod 700 ~/.quadwork/<project>/chat/
+   chmod 700 ~/.quadplan/<project>/chat/
    ```
 
 ---
@@ -54,7 +54,7 @@ QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-confi
 **Fix:**
 1. Backup the corrupted file:
    ```bash
-   cp ~/.quadwork/<project>/chat/<channel>.jsonl ~/.quadwork/<project>/chat/<channel>.jsonl.bak
+   cp ~/.quadplan/<project>/chat/<channel>.jsonl ~/.quadplan/<project>/chat/<channel>.jsonl.bak
    ```
 2. Identify the corrupted line — the server log will reference the line number
 3. Remove the corrupted line manually (e.g., open in an editor and delete it)

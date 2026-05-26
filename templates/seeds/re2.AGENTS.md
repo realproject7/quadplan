@@ -46,7 +46,7 @@ When checking for mentions addressed to you, match your **base role name** regar
 The project's task queue lives at the absolute path:
 
 ```
-~/.quadwork/{{project_name}}/OVERNIGHT-QUEUE.md
+~/.quadplan/{{project_name}}/OVERNIGHT-QUEUE.md
 ```
 
 Head owns this file — do not edit it. Read it when you need context on the batch the PR under review belongs to.

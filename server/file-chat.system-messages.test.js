@@ -9,7 +9,7 @@ const PROJECT = "__system_msg_test__";
 
 function cleanup() {
   try { fileChat.shutdownProject(PROJECT); } catch {}
-  const dir = path.join(os.homedir(), ".quadwork", PROJECT);
+  const dir = path.join(os.homedir(), ".quadplan", PROJECT);
   try { fs.rmSync(dir, { recursive: true }); } catch {}
 }
 

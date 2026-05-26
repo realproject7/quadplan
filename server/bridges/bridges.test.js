@@ -18,7 +18,7 @@ function cleanup() {
 
 process.on("exit", cleanup);
 
-const QW_DIR = path.join(TEST_DIR, ".quadwork");
+const QW_DIR = path.join(TEST_DIR, ".quadplan");
 fs.mkdirSync(QW_DIR, { recursive: true });
 
 // --- Test: Telegram reads Python-written cursor file ---

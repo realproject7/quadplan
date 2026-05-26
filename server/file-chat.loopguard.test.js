@@ -10,7 +10,7 @@ const PROJECT = "__loop_guard_test__";
 function cleanup() {
   try { fileChat.shutdownProject(PROJECT); } catch {}
   try { fileChat.resetLoopGuard(PROJECT); } catch {}
-  const dir = path.join(os.homedir(), ".quadwork", PROJECT);
+  const dir = path.join(os.homedir(), ".quadplan", PROJECT);
   try { fs.rmSync(dir, { recursive: true }); } catch {}
 }
 

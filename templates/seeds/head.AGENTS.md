@@ -69,7 +69,7 @@ You are therefore the *combined* T1 + operator-relay: you receive high-level ins
 The single source of truth for this project's task queue is:
 
 ```
-~/.quadwork/{{project_name}}/OVERNIGHT-QUEUE.md
+~/.quadplan/{{project_name}}/OVERNIGHT-QUEUE.md
 ```
 
 This is an **absolute path** — read it with the full path, never a relative one. All four agents (Head, Dev, RE1, RE2) can read this file. Only Head updates it.

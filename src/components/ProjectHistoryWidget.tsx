@@ -68,7 +68,7 @@ interface ImportResult {
 }
 
 // #424 / quadwork#304 Phase 4: auto-snapshot list for the restore
-// UI. Files live at ~/.quadwork/{id}/history-snapshots/{ISO}.json
+// UI. Files live at ~/.quadplan/{id}/history-snapshots/{ISO}.json
 // and are created by snapshotProjectHistory() in server/index.js
 // before every restart/update.
 interface SnapshotEntry {

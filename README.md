@@ -184,7 +184,7 @@ Head: merges, picks the next issue
 - 🚧 **GitHub branch protection** enforced on `main`
 - ✅ **2-of-2 reviewer approval** required before merge
 - 🛑 **Sender lockdown** — chat POSTs can't impersonate an agent (`head`, `dev`, …) from the UI
-- 🗄️ **Auto-snapshot** of chat history to `~/.quadwork/{project}/history-snapshots/` with an in-dashboard **Restore** button
+- 🗄️ **Auto-snapshot** of chat history to `~/.quadplan/{project}/history-snapshots/` with an in-dashboard **Restore** button
 
 ## ─ External Tools
 
@@ -207,8 +207,8 @@ QuadWork stands on top of some great open-source work. Explicit thanks:
 
 ## ─ Configuration
 
-Global config lives at `~/.quadwork/config.json`. The per-project queue
-lives at `~/.quadwork/{project_id}/OVERNIGHT-QUEUE.md`.
+Global config lives at `~/.quadplan/config.json`. The per-project queue
+lives at `~/.quadplan/{project_id}/OVERNIGHT-QUEUE.md`.
 
 ```json
 {
@@ -246,7 +246,7 @@ QuadWork runs as a single Express server on `127.0.0.1:8400`:
 - **REST API** — agent lifecycle, config, GitHub proxy, chat proxy, triggers, loop guard, batch progress, project history
 - **WebSocket** — xterm.js terminal PTY sessions + chat event fan-out
 
-Per-project chat data lives at `~/.quadwork/{project}/chat/`.
+Per-project chat data lives at `~/.quadplan/{project}/chat/`.
 Per-project git worktrees sit next to the repo:
 `{repo}-head`, `{repo}-dev`, `{repo}-re1`, `{repo}-re2`. The
 dashboard's xterm.js tiles attach to node-pty sessions over a WebSocket;
@@ -266,7 +266,7 @@ After `init`, create projects from the web UI at `http://127.0.0.1:8400/setup`.
 
 ### Disk usage
 
-Each project stores its chat data at `~/.quadwork/{project_id}/chat/`.
+Each project stores its chat data at `~/.quadplan/{project_id}/chat/`.
 Disk usage is minimal — chat logs are plain JSON files.
 
 Existing v1 users can remove legacy files via `npx quadwork cleanup --legacy`.

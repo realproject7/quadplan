@@ -324,7 +324,7 @@ export default function SetupWizard() {
   const [reviewerUser, setReviewerUser] = useState("");
   const [reviewerTokenMode, setReviewerTokenMode] = useState<"paste" | "file">("paste");
   const [reviewerTokenValue, setReviewerTokenValue] = useState("");
-  const [reviewerTokenPath, setReviewerTokenPath] = useState("~/.quadwork/reviewer-token");
+  const [reviewerTokenPath, setReviewerTokenPath] = useState("~/.quadplan/reviewer-token");
   const [workingDir, setWorkingDir] = useState("");
   const [loading, setLoading] = useState(false);
   const [workspaceLog, setWorkspaceLog] = useState<string[]>([]);
@@ -491,7 +491,7 @@ export default function SetupWizard() {
     // 2. Seed files
     setWorkspaceLog((l) => [...l, "Writing seed files..."]);
     const effectiveTokenPath = showReviewerCreds
-      ? (reviewerTokenMode === "file" ? reviewerTokenPath : "~/.quadwork/reviewer-token")
+      ? (reviewerTokenMode === "file" ? reviewerTokenPath : "~/.quadplan/reviewer-token")
       : "";
     const seedResult = await apiCall("seed-files", {
       workingDir,
@@ -928,12 +928,12 @@ export default function SetupWizard() {
                           <input
                             value={reviewerTokenPath}
                             onChange={(e) => setReviewerTokenPath(e.target.value)}
-                            placeholder="~/.quadwork/reviewer-token"
+                            placeholder="~/.quadplan/reviewer-token"
                             className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent"
                           />
-                          {reviewerTokenPath && !reviewerTokenPath.startsWith("~/.quadwork") && !reviewerTokenPath.startsWith(String.raw`${process.env.HOME}/.quadwork`) && (
+                          {reviewerTokenPath && !reviewerTokenPath.startsWith("~/.quadplan") && !reviewerTokenPath.startsWith(String.raw`${process.env.HOME}/.quadplan`) && (
                             <p className="text-[10px] text-[#ffcc00] mt-1">
-                              This path may be inside a git repository. Consider using the default ~/.quadwork/ location to avoid accidentally committing tokens.
+                              This path may be inside a git repository. Consider using the default ~/.quadplan/ location to avoid accidentally committing tokens.
                             </p>
                           )}
                         </>
