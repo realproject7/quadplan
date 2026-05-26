@@ -223,6 +223,16 @@ describe("resolveEffectiveStatus", () => {
     assert.equal(resolveEffectiveStatus(a), "re1_changes_requested");
   });
 
+  it("changes_requested takes precedence over single approval (RE1 approved + RE2 changes)", () => {
+    const a = { status: "ready_for_review", review: { re1: "approved", re2: "changes_requested" } };
+    assert.equal(resolveEffectiveStatus(a), "re2_changes_requested");
+  });
+
+  it("changes_requested takes precedence over single approval (RE2 approved + RE1 changes)", () => {
+    const a = { status: "ready_for_review", review: { re1: "changes_requested", re2: "approved" } };
+    assert.equal(resolveEffectiveStatus(a), "re1_changes_requested");
+  });
+
   it("preserves done and approved statuses", () => {
     assert.equal(resolveEffectiveStatus({ status: "done", review: { re1: "pending", re2: "pending" } }), "done");
     assert.equal(resolveEffectiveStatus({ status: "approved", review: { re1: "pending", re2: "pending" } }), "approved");

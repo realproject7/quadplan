@@ -166,10 +166,10 @@ function resolveEffectiveStatus(artifact) {
   if (artifact.status === "done" || artifact.status === "approved") return artifact.status;
   const { re1, re2 } = artifact.review || {};
   if (re1 === "approved" && re2 === "approved") return "approved";
-  if (re1 === "approved" && re2 !== "approved") return "approved_by_re1";
-  if (re2 === "approved" && re1 !== "approved") return "approved_by_re2";
   if (re1 === "changes_requested") return "re1_changes_requested";
   if (re2 === "changes_requested") return "re2_changes_requested";
+  if (re1 === "approved" && re2 !== "approved") return "approved_by_re1";
+  if (re2 === "approved" && re1 !== "approved") return "approved_by_re2";
   return artifact.status || "queued";
 }
 
