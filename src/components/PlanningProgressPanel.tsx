@@ -158,17 +158,25 @@ export default function PlanningProgressPanel({ projectId }: PlanningProgressPan
         {data.artifacts.map((artifact) => {
           const link = artifactLink(artifact);
           const row = (
-            <div className="flex items-center gap-2 px-3 py-1 font-mono">
-              <span className="text-[11px] text-text-muted w-12 shrink-0 tabular-nums truncate">
-                {artifact.id}
-              </span>
-              <ProgressBar percent={artifact.progress} />
-              <span className="text-[11px] text-text-muted tabular-nums shrink-0 w-9 text-right">
-                {artifact.progress}%
-              </span>
-              <span className="text-[11px] text-text truncate flex-1 min-w-0">
-                {artifact.statusLabel}
-              </span>
+            <div className="px-3 py-1 font-mono">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-text-muted w-12 shrink-0 tabular-nums truncate">
+                  {artifact.id}
+                </span>
+                <ProgressBar percent={artifact.progress} />
+                <span className="text-[11px] text-text-muted tabular-nums shrink-0 w-9 text-right">
+                  {artifact.progress}%
+                </span>
+                <span className="text-[11px] text-text-muted shrink-0">
+                  {artifact.statusLabel}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 pl-14">
+                {artifact.type && (
+                  <span className="text-[10px] text-accent-dim uppercase tracking-wider">{artifact.type}</span>
+                )}
+                <span className="text-[10px] text-text truncate min-w-0">{artifact.title}</span>
+              </div>
             </div>
           );
           if (!link) {
