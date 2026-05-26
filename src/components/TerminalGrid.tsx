@@ -28,9 +28,8 @@ const DEFAULT_AGENTS: Agent[] = [
   { id: "re2", label: "RE2" },
 ];
 
-// Border classes per tile. 3-agent legacy layout (re1/re2/dev)
-// has a full-width bottom tile; the 4-agent layout used by the new
-// #208 top-right quadrant has all four tiles in a 2x2 grid.
+// Border classes per tile. 3-agent layout (head/re1/re2)
+// has a full-width bottom tile; 4-agent layout uses a 2x2 grid.
 const GRID_CLASSES_3 = [
   "border-r border-b border-border", // top-left
   "border-b border-border",          // top-right
