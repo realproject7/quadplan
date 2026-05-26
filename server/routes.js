@@ -1887,6 +1887,8 @@ router.get("/api/planning-progress", (req, res) => {
   return res.json({ batchNumber, batchTitle, artifacts: rows, summary });
 });
 
+const _planningLoopTimers = new Map();
+
 router.post("/api/planning-loop/pulse", (req, res) => {
   const projectId = req.query.project || (req.body && req.body.project);
   if (!projectId) return res.status(400).json({ error: "Missing project" });
@@ -1896,9 +1898,73 @@ router.post("/api/planning-loop/pulse", (req, res) => {
   if (!paths) return res.status(404).json({ error: "Unknown project" });
 
   const customMessage = req.body && req.body.message;
-  const result = sendPlanningPulse(projectId, customMessage);
+  const result = sendPlanningPulse(projectId, customMessage, fileChat);
   if (!result.ok) return res.status(500).json(result);
   return res.json({ ok: true, sent: true });
+});
+
+router.post("/api/planning-loop/start", (req, res) => {
+  const projectId = req.query.project || (req.body && req.body.project);
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+
+  const { resolveProjectPaths } = require("./config");
+  if (!resolveProjectPaths(projectId)) return res.status(404).json({ error: "Unknown project" });
+
+  const { SUPPORTED_INTERVALS, DEFAULT_INTERVAL_MIN } = require("./planning-loop");
+  const intervalMin = SUPPORTED_INTERVALS.includes(req.body?.intervalMin)
+    ? req.body.intervalMin
+    : DEFAULT_INTERVAL_MIN;
+  const intervalMs = intervalMin * 60 * 1000;
+
+  if (_planningLoopTimers.has(projectId)) {
+    clearInterval(_planningLoopTimers.get(projectId).timer);
+  }
+
+  const timer = setInterval(() => {
+    sendPlanningPulse(projectId, null, fileChat);
+    const info = _planningLoopTimers.get(projectId);
+    if (info) { info.lastPulse = Date.now(); info.nextPulse = Date.now() + intervalMs; }
+  }, intervalMs);
+
+  _planningLoopTimers.set(projectId, {
+    timer,
+    intervalMin,
+    intervalMs,
+    startedAt: Date.now(),
+    lastPulse: null,
+    nextPulse: Date.now() + intervalMs,
+  });
+
+  return res.json({ ok: true, intervalMin, nextPulse: Date.now() + intervalMs });
+});
+
+router.post("/api/planning-loop/stop", (req, res) => {
+  const projectId = req.query.project || (req.body && req.body.project);
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+
+  const info = _planningLoopTimers.get(projectId);
+  if (info) {
+    clearInterval(info.timer);
+    _planningLoopTimers.delete(projectId);
+  }
+  return res.json({ ok: true, stopped: true });
+});
+
+router.get("/api/planning-loop/status", (req, res) => {
+  const projectId = req.query.project;
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+
+  const info = _planningLoopTimers.get(projectId);
+  if (!info) {
+    return res.json({ enabled: false, state: "paused", intervalMin: null, lastPulse: null, nextPulse: null });
+  }
+  return res.json({
+    enabled: true,
+    state: "running",
+    intervalMin: info.intervalMin,
+    lastPulse: info.lastPulse,
+    nextPulse: info.nextPulse,
+  });
 });
 
 router.get("/api/batch-progress", async (req, res) => {

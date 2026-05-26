@@ -21,26 +21,25 @@ after(() => {
 });
 
 describe("sendPlanningPulse", () => {
-  it("writes a chat message to the project chat file", () => {
+  it("writes a chat message via fileChat.appendMessage", () => {
     const { CONFIG_DIR } = require("./config");
     const chatDir = path.join(CONFIG_DIR, "pulsetest", "chat");
     fs.mkdirSync(chatDir, { recursive: true });
 
+    const fileChat = require("./file-chat");
+    fileChat.initProject("pulsetest");
+
     const { sendPlanningPulse, PLANNING_PULSE_MESSAGE } = require("./planning-loop-pulse");
-    const result = sendPlanningPulse("pulsetest");
+    const result = sendPlanningPulse("pulsetest", null, fileChat);
 
     assert.equal(result.ok, true);
     assert.equal(result.message, PLANNING_PULSE_MESSAGE);
 
-    const chatFile = path.join(chatDir, "general.jsonl");
-    assert.ok(fs.existsSync(chatFile), "Chat file should be created");
-
-    const lines = fs.readFileSync(chatFile, "utf-8").trim().split("\n");
-    assert.ok(lines.length >= 1);
-    const msg = JSON.parse(lines[lines.length - 1]);
-    assert.equal(msg.sender, "system");
-    assert.equal(msg.channel, "general");
-    assert.ok(msg.text.includes("Queue check"));
+    const messages = fileChat.readMessages("pulsetest", { limit: 10 });
+    assert.ok(messages.length >= 1);
+    const pulse = messages[messages.length - 1];
+    assert.equal(pulse.sender, "system");
+    assert.ok(pulse.text.includes("Queue check"));
   });
 
   it("supports custom message", () => {
@@ -48,22 +47,26 @@ describe("sendPlanningPulse", () => {
     const chatDir = path.join(CONFIG_DIR, "pulsetest2", "chat");
     fs.mkdirSync(chatDir, { recursive: true });
 
+    const fileChat = require("./file-chat");
+    fileChat.initProject("pulsetest2");
+
     const { sendPlanningPulse } = require("./planning-loop-pulse");
-    const result = sendPlanningPulse("pulsetest2", "@head Custom pulse message");
+    const result = sendPlanningPulse("pulsetest2", "@head Custom pulse", fileChat);
 
     assert.equal(result.ok, true);
-    assert.equal(result.message, "@head Custom pulse message");
+    assert.equal(result.message, "@head Custom pulse");
 
-    const chatFile = path.join(chatDir, "general.jsonl");
-    const lines = fs.readFileSync(chatFile, "utf-8").trim().split("\n");
-    const msg = JSON.parse(lines[lines.length - 1]);
-    assert.ok(msg.text.includes("Custom pulse message"));
+    const messages = fileChat.readMessages("pulsetest2", { limit: 10 });
+    const pulse = messages[messages.length - 1];
+    assert.ok(pulse.text.includes("Custom pulse"));
   });
 
-  it("PLANNING_PULSE_MESSAGE contains @head and Queue check", () => {
+  it("PLANNING_PULSE_MESSAGE matches issue #24 standard format", () => {
     const { PLANNING_PULSE_MESSAGE } = require("./planning-loop-pulse");
     assert.ok(PLANNING_PULSE_MESSAGE.includes("@head"));
     assert.ok(PLANNING_PULSE_MESSAGE.includes("Queue check"));
+    assert.ok(PLANNING_PULSE_MESSAGE.includes("QuadPlan"));
+    assert.ok(PLANNING_PULSE_MESSAGE.includes("OVERNIGHT-QUEUE.md"));
     assert.ok(!PLANNING_PULSE_MESSAGE.includes("@dev"));
   });
 });
