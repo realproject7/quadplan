@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { ensureSecureDir, writeSecureFile } = require("./config");
+const { CONFIG_DIR, ensureSecureDir, writeSecureFile } = require("./config");
 const { parseMentions } = require("./file-chat");
 
 const KNOWN_FIELDS = new Set([
@@ -50,7 +50,7 @@ function convertAcRecord(record, nextId) {
 }
 
 function migrateProject(projectId) {
-  const chatDir = path.join(os.homedir(), ".quadwork", projectId, "chat");
+  const chatDir = path.join(CONFIG_DIR, projectId, "chat");
   const migratedPath = path.join(chatDir, ".migrated");
   const targetPath = path.join(chatDir, "general.jsonl");
 
@@ -62,7 +62,7 @@ function migrateProject(projectId) {
   }
 
   const acLogPath = path.join(
-    os.homedir(), ".quadwork", projectId, "agentchattr", "data", "agentchattr_log.jsonl"
+    CONFIG_DIR, projectId, "agentchattr", "data", "agentchattr_log.jsonl"
   );
   if (!fs.existsSync(acLogPath)) return null;
 

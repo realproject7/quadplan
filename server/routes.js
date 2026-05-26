@@ -20,8 +20,7 @@ const router = express.Router();
 let _ptyDispatchCallback = null;
 function setPtyDispatchCallback(fn) { _ptyDispatchCallback = fn; }
 
-const CONFIG_DIR = path.join(os.homedir(), ".quadwork");
-const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
+const { CONFIG_DIR, CONFIG_PATH, readConfig, sanitizeOperatorName, ensureSecureDir, writeSecureFile, writeConfig } = require("./config");
 const ENV_PATH = path.join(CONFIG_DIR, ".env");
 const TEMPLATES_DIR = path.join(__dirname, "..", "templates");
 const REPO_RE = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
@@ -216,11 +215,11 @@ router.put("/api/config", (req, res) => {
 
 // ─── Chat (file-based) ────────────────────────────────────────────────────
 
-const { sanitizeOperatorName, ensureSecureDir, writeSecureFile, writeConfig } = require("./config");
+// (sanitizeOperatorName, ensureSecureDir, writeSecureFile, writeConfig imported at top)
 const { findAgentChattr } = require("./install-agentchattr");
 
 /**
- * Seed ~/.quadwork/{projectId}/OVERNIGHT-QUEUE.md from the template.
+ * Seed ~/.quadplan/{projectId}/OVERNIGHT-QUEUE.md from the template.
  * Idempotent: never overwrites an existing file so user / Head
  * agent edits are preserved across re-runs. All errors are swallowed
  * — project creation should not abort over a docs file, and callers
@@ -496,7 +495,7 @@ router.post("/api/project-history", async (req, res) => {
 
 // #424 / quadwork#304 Phase 4: list + restore auto-snapshots.
 // snapshotProjectHistory() in server/index.js writes envelope
-// files to ~/.quadwork/{id}/history-snapshots/{ISO}.json before
+// files to ~/.quadplan/{id}/history-snapshots/{ISO}.json before
 // destructive restart/update operations. These endpoints let the
 // Project History widget surface them with a restore button so
 // the operator can roll back a bad /clear or botched update.
@@ -569,7 +568,7 @@ router.post("/api/project-history/restore", async (req, res) => {
 // POSTs them to /api/activity/log. We buffer `start` events in
 // memory keyed by `${project}/${agent}`; an `end` event looks up the
 // matching buffered start, computes the duration, and appends a
-// complete session row to ~/.quadwork/{project}/activity.jsonl.
+// complete session row to ~/.quadplan/{project}/activity.jsonl.
 //
 // /api/activity/stats aggregates across all projects with a 30s
 // cache so the dashboard can poll it every minute without thrashing
@@ -621,7 +620,7 @@ router.post("/api/activity/log", (req, res) => {
   res.json({ ok: true, duration_ms: row.duration_ms });
 });
 
-// Aggregate all activity.jsonl files under ~/.quadwork/*/activity.jsonl.
+// Aggregate all activity.jsonl files under ~/.quadplan/*/activity.jsonl.
 // `today`, `week`, `month` boundaries use the operator's local
 // timezone rather than UTC — "this week" should mean the week the
 // operator is living in, not a UTC-offset week that starts at
@@ -641,7 +640,7 @@ function computeActivityStats() {
   const totals = { today_ms: 0, week_ms: 0, month_ms: 0, total_ms: 0 };
   const byProject = {};
   // #430 / quadwork#312: only count projects registered in
-  // config.json, not every directory under ~/.quadwork/. Stray
+  // config.json, not every directory under ~/.quadplan/. Stray
   // folders from deleted / unconfigured projects must not inflate
   // the stats — that's explicit in #312's acceptance.
   let projectIds = [];
@@ -1396,7 +1395,7 @@ router.get("/api/github/merged-prs", (req, res) => {
 
 // #413 / quadwork#282: Current Batch Progress panel.
 //
-// Reads ~/.quadwork/{project}/OVERNIGHT-QUEUE.md, parses the
+// Reads ~/.quadplan/{project}/OVERNIGHT-QUEUE.md, parses the
 // `## Active Batch` section for `Batch: N` + issue numbers, and
 // resolves each issue against GitHub (state + linked PR + review
 // counts) to compute a progress state. The 5 progress buckets are
@@ -1500,7 +1499,7 @@ function resolveDisplayedBatch(queueText, projectId, { queueReadOk = true } = {}
   // Queue file deleted / unreadable → fall back to empty state per
   // #316's edge case. Returning the snapshot here would "heal" a
   // genuinely missing file into stale data the operator can't
-  // reconcile without nuking ~/.quadwork/{id}/batch-progress-cache.json
+  // reconcile without nuking ~/.quadplan/{id}/batch-progress-cache.json
   // manually.
   if (!queueReadOk) return { batchNumber: null, issueNumbers: [] };
   const current = parseActiveBatch(queueText);
@@ -1986,7 +1985,7 @@ router.get("/api/setup/detect-clone", (req, res) => {
 router.post("/api/setup/save-token", (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: "Missing token" });
-  const tokenPath = path.join(os.homedir(), ".quadwork", "reviewer-token");
+  const tokenPath = path.join(CONFIG_DIR, "reviewer-token");
   const dir = path.dirname(tokenPath);
   ensureSecureDir(dir);
   writeSecureFile(tokenPath, token.trim() + "\n");
@@ -1999,7 +1998,7 @@ router.post("/api/setup/save-token", (req, res) => {
 // Settings page can show "Configured" / "Not configured" without
 // leaking the secret over the API.
 router.get("/api/setup/reviewer-token-status", (_req, res) => {
-  const tokenPath = path.join(os.homedir(), ".quadwork", "reviewer-token");
+  const tokenPath = path.join(CONFIG_DIR, "reviewer-token");
   res.json({ exists: fs.existsSync(tokenPath), path: tokenPath });
 });
 
@@ -2086,7 +2085,7 @@ router.post("/api/setup", (req, res) => {
       const dirName = path.basename(workingDir);
       const parentDir = path.dirname(workingDir);
       const reviewerUser = body.reviewerUser || "";
-      const reviewerTokenPath = body.reviewerTokenPath || path.join(os.homedir(), ".quadwork", "reviewer-token");
+      const reviewerTokenPath = body.reviewerTokenPath || path.join(CONFIG_DIR, "reviewer-token");
       const agents = ["head", "re1", "re2", "dev"];
       const seeded = [];
       for (const agent of agents) {
@@ -2203,7 +2202,7 @@ router.post("/api/setup", (req, res) => {
       writeConfig(cfg);
 
       // Batch 25 / #204: seed the per-project OVERNIGHT-QUEUE.md at
-      // ~/.quadwork/{id}/OVERNIGHT-QUEUE.md.
+      // ~/.quadplan/{id}/OVERNIGHT-QUEUE.md.
       writeOvernightQueueFileSafe(id, name || id, repo);
 
       return res.json({ ok: true });
@@ -2477,7 +2476,7 @@ router.post("/api/telegram", async (req, res) => {
       // Telegram Bridge widget. Unlike save-token (which requires
       // project.telegram to already exist), save-config creates the
       // telegram block on the fly for projects that haven't been
-      // configured yet. The raw token is written to ~/.quadwork/.env
+      // configured yet. The raw token is written to ~/.quadplan/.env
       // (0600) and replaced on the config entry with `env:KEY`.
       const projectId = body.project_id;
       const bot_token = typeof body.bot_token === "string" ? body.bot_token.trim() : "";
