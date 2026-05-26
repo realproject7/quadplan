@@ -38,7 +38,7 @@ const COPY = {
     },
     workdir: {
       title: "Where is your project?",
-      desc: "Your project's git repository on your local machine. QuadWork will create 4 agent workspaces next to this directory.",
+      desc: "Your project's git repository on your local machine. QuadPlan will create 3 agent workspaces next to this directory.",
       scanning: "Scanning for existing clone...",
       found: "Found existing clone",
       useThis: "Use this",
