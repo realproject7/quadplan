@@ -71,7 +71,7 @@ interface TelegramStatus {
   chat_id: string;
   bot_username: string;
   bridge_installed: boolean;
-  // #353: tail of ~/.quadwork/tg-bridge-<projectId>.log
+  // #353: tail of ~/.quadplan/tg-bridge-<projectId>.log
   // populated by the server when running === false and the log
   // file has content, so runtime crashes after a successful
   // Start are still visible in the widget.

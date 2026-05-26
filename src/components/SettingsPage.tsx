@@ -88,7 +88,7 @@ const COPY = {
     notConfigured: "Not configured",
     pasteNewToken: "Paste new token",
     defaultsHelp:
-      "The default CLI seeds new project agents. The reviewer GitHub user/token are used by RE1/RE2 to post PR review comments without your personal token. The token is written to ~/.quadwork/reviewer-token (mode 0600) and is never returned by the API.",
+      "The default CLI seeds new project agents. The reviewer GitHub user/token are used by RE1/RE2 to post PR review comments without your personal token. The token is written to ~/.quadplan/reviewer-token (mode 0600) and is never returned by the API.",
     system: "System",
     keepAwake: "Keep Awake",
     on: "on",
@@ -166,7 +166,7 @@ const COPY = {
     notConfigured: "미설정",
     pasteNewToken: "새 토큰 붙여넣기",
     defaultsHelp:
-      "기본 CLI는 새 프로젝트 에이전트의 초기값으로 사용됩니다. 리뷰어 GitHub 사용자/토큰은 개인 토큰 없이 RE1/RE2가 PR 리뷰 댓글을 남길 때 사용됩니다. 토큰은 ~/.quadwork/reviewer-token (권한 0600)에 저장되며 API로는 반환되지 않습니다.",
+      "기본 CLI는 새 프로젝트 에이전트의 초기값으로 사용됩니다. 리뷰어 GitHub 사용자/토큰은 개인 토큰 없이 RE1/RE2가 PR 리뷰 댓글을 남길 때 사용됩니다. 토큰은 ~/.quadplan/reviewer-token (권한 0600)에 저장되며 API로는 반환되지 않습니다.",
     system: "시스템",
     keepAwake: "절전 방지",
     on: "켜짐",

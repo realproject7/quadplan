@@ -106,7 +106,7 @@ function minutesToHoursStr(min: number): string {
 }
 
 function defaultMessage(projectId: string) {
-  const queuePath = `~/.quadwork/${projectId}/OVERNIGHT-QUEUE.md`;
+  const queuePath = `~/.quadplan/${projectId}/OVERNIGHT-QUEUE.md`;
   return (
 `@head @dev @re1 @re2 — Queue check.
 @head: Merge any PR with both approvals, assign next from ${queuePath}.

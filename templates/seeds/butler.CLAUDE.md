@@ -42,12 +42,12 @@ When checking for mentions addressed to you, match your **base role name** regar
 Butler is the cross-project operator assistant:
 - Works from `~/docs/` — not inside any project repo
 - Not a project agent (Head/Dev/RE1/RE2) — never takes on their roles
-- Has access to all QuadWork projects via `~/.quadwork/config.json` and `gh` CLI
+- Has access to all QuadWork projects via `~/.quadplan/config.json` and `gh` CLI
 - Persists memory and notes via Claude Code's built-in CLAUDE.md in `~/docs/`
 
 ## 2. Project Awareness & Isolation
 
-Read `~/.quadwork/config.json` for project IDs, repos, and working directories. Access any repo via `gh -R owner/repo`. Know worktree layout: `<working_dir>-{head,dev,re1,re2}`.
+Read `~/.quadplan/config.json` for project IDs, repos, and working directories. Access any repo via `gh -R owner/repo`. Know worktree layout: `<working_dir>-{head,dev,re1,re2}`.
 
 **Critical: project context isolation.** Butler manages multiple projects simultaneously. To prevent mixing contexts:
 - Always specify `-R owner/repo` when running `gh` commands — never rely on cwd
@@ -279,7 +279,7 @@ Butler must understand QuadWork's internal architecture to diagnose issues:
   - WebSocket connections for terminal I/O and chat
 
 - **File-based Chat** (`server/file-chat.js`): chat system for agent communication
-  - Chat messages stored as JSONL files in `~/.quadwork/<project>/chat/`
+  - Chat messages stored as JSONL files in `~/.quadplan/<project>/chat/`
   - One JSONL file per channel (e.g., `general.jsonl`)
   - Server reads/writes JSONL directly — no external process or port needed
   - Corrupted lines are skipped on read for resilience
@@ -300,14 +300,14 @@ Butler must understand QuadWork's internal architecture to diagnose issues:
 - **Bridges** (Node.js in-process): Discord and Telegram message forwarding
   - Discord bridge: `server/bridges/discord.js`
   - Telegram bridge: `server/bridges/telegram.js`
-  - Configured per-project in `~/.quadwork/config.json` (telegram/discord blocks)
+  - Configured per-project in `~/.quadplan/config.json` (telegram/discord blocks)
 
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `~/.quadwork/config.json` | Global QuadWork config (port, projects, agents) |
-| `~/.quadwork/<project>/chat/*.jsonl` | Per-project chat messages (one file per channel) |
-| `~/.quadwork/<project>/OVERNIGHT-QUEUE.md` | Task queue for the project's Head agent |
+| `~/.quadplan/config.json` | Global QuadWork config (port, projects, agents) |
+| `~/.quadplan/<project>/chat/*.jsonl` | Per-project chat messages (one file per channel) |
+| `~/.quadplan/<project>/OVERNIGHT-QUEUE.md` | Task queue for the project's Head agent |
 | `server/index.js` | Main server: agent spawning, chat integration |
 | `server/file-chat.js` | File-based chat: read/write JSONL, message dispatch |
 | `server/routes.js` | API routes: setup wizard, chat, bridges, GitHub |
@@ -326,7 +326,7 @@ Butler must understand QuadWork's internal architecture to diagnose issues:
 Read `docs/troubleshooting.md` first for known issues. Then use the architecture knowledge above to diagnose:
 
 1. Check server logs for error patterns
-2. Check chat files: `ls -la ~/.quadwork/<project>/chat/`
+2. Check chat files: `ls -la ~/.quadplan/<project>/chat/`
 3. Check agent processes: `ps aux | grep -E "claude|codex"`
 4. Check port status: `lsof -iTCP:<port> -sTCP:LISTEN`
 5. Check agent status via API: `curl http://127.0.0.1:8400/api/agents/<project>`
@@ -356,7 +356,7 @@ Butler can create batches on any project directly by editing that project's OVER
 - Proactively suggest: "Phase 1 tickets #N1-#N4 are ready. Want me to batch them?"
 
 **How to create a batch:**
-1. Resolve the project's queue file path from config: `~/.quadwork/<project-id>/OVERNIGHT-QUEUE.md`
+1. Resolve the project's queue file path from config: `~/.quadplan/<project-id>/OVERNIGHT-QUEUE.md`
 2. Read the current file to find the latest batch number
 3. Compute next batch number: `max(all Batch: N lines) + 1`
 4. Write the Active Batch section with correct formatting

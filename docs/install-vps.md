@@ -143,7 +143,7 @@ ssh quadwork 'cd ~ && tar xzf /tmp/auth-backup.tar.gz && rm /tmp/auth-backup.tar
 npm install -g quadwork@latest
 ```
 
-Optional — pre-create config at `~/.quadwork/config.json`:
+Optional — pre-create config at `~/.quadplan/config.json`:
 
 ```json
 {
@@ -170,7 +170,7 @@ pm2 delete agentchattr-*
 pm2 save
 ```
 
-Chat is now file-based (JSONL + MCP shim) and no longer requires a separate service. You can also remove `agentchattr_url` and `agentchattr_dir` from `~/.quadwork/config.json` if present.
+Chat is now file-based (JSONL + MCP shim) and no longer requires a separate service. You can also remove `agentchattr_url` and `agentchattr_dir` from `~/.quadplan/config.json` if present.
 
 ---
 
@@ -335,11 +335,11 @@ sudo nginx -t && sudo systemctl reload nginx
 Save credentials for reference:
 
 ```bash
-cat > ~/.quadwork/.env << 'EOF'
+cat > ~/.quadplan/.env << 'EOF'
 QUADWORK_HTTP_USER=admin
 QUADWORK_HTTP_PASS=YOUR_GENERATED_PASSWORD
 EOF
-chmod 600 ~/.quadwork/.env
+chmod 600 ~/.quadplan/.env
 ```
 
 ---
