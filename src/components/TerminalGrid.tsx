@@ -26,7 +26,6 @@ interface TerminalGridProps {
 const DEFAULT_AGENTS: Agent[] = [
   { id: "re1", label: "RE1" },
   { id: "re2", label: "RE2" },
-  { id: "dev", label: "Dev" },
 ];
 
 // Border classes per tile. 3-agent legacy layout (re1/re2/dev)
