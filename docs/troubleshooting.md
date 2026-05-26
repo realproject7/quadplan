@@ -1,4 +1,4 @@
-# QuadWork — Troubleshooting
+# QuadPlan — Troubleshooting
 
 Common issues and fixes, structured as **Symptom > Cause > Fix**. Searchable by error message.
 
@@ -19,7 +19,7 @@ cd /path/to/project-re1 && claude -p "echo ok"
 cd /path/to/project-re2 && claude -p "echo ok"
 ```
 
-QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-configured agents during project creation. If upgrading from an older version, run the commands above once.
+QuadPlan v1.14.5+ automatically pre-trusts worktree directories for Claude-configured agents during project creation. If upgrading from an older version, run the commands above once.
 
 ---
 
@@ -27,7 +27,7 @@ QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-confi
 
 **Symptom:** Chat messages fail to send or load. Agents report errors reading/writing chat files.
 
-**Cause:** The JSONL chat files at `~/.quadplan/<project>/chat/` aren't readable or writable by the QuadWork server process.
+**Cause:** The JSONL chat files at `~/.quadplan/<project>/chat/` aren't readable or writable by the QuadPlan server process.
 
 **Fix:**
 1. Check file permissions on the chat directory and its files:
@@ -58,7 +58,7 @@ QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-confi
    ```
 2. Identify the corrupted line — the server log will reference the line number
 3. Remove the corrupted line manually (e.g., open in an editor and delete it)
-4. Restart the QuadWork server to reload the file
+4. Restart the QuadPlan server to reload the file
 
 ---
 
@@ -74,7 +74,7 @@ QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-confi
    ps aux | grep -E "claude|codex|gemini"
    ```
 2. Verify the agent's MCP shim is configured in the project's agent settings
-3. Check the agent's terminal in the QuadWork dashboard for errors
+3. Check the agent's terminal in the QuadPlan dashboard for errors
 4. Restart the agent from the dashboard if needed
 
 ---
@@ -83,23 +83,23 @@ QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-confi
 
 **Symptom:** Agents fail to launch. Logs show `claude: command not found` or agents get stuck on login prompts even though `claude` works in interactive SSH.
 
-**Cause:** pm2 strips environment variables from child processes. Even if nvm is loaded when you run `pm2 start`, the QuadWork process inherits a minimal PATH without nvm binaries.
+**Cause:** pm2 strips environment variables from child processes. Even if nvm is loaded when you run `pm2 start`, the QuadPlan process inherits a minimal PATH without nvm binaries.
 
-**Fix:** Use a wrapper script that sources nvm before starting QuadWork:
+**Fix:** Use a wrapper script that sources nvm before starting QuadPlan:
 
 ```bash
-cat > ~/start-quadwork.sh << 'EOF'
+cat > ~/start-quadplan.sh << 'EOF'
 #!/bin/bash
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 nvm use 24
-exec quadwork start
+exec quadplan start
 EOF
-chmod +x ~/start-quadwork.sh
+chmod +x ~/start-quadplan.sh
 
-pm2 stop quadwork
-pm2 delete quadwork
-pm2 start ~/start-quadwork.sh --name quadwork --interpreter /bin/bash
+pm2 stop quadplan
+pm2 delete quadplan
+pm2 start ~/start-quadplan.sh --name quadplan --interpreter /bin/bash
 pm2 save
 ```
 
@@ -113,13 +113,13 @@ pm2 save
 
 **Cause:** Claude Code explicitly blocks the dangerous permissions bypass when running as root as a safety measure.
 
-**Fix:** Never run QuadWork as root. Create a dedicated non-root user:
+**Fix:** Never run QuadPlan as root. Create a dedicated non-root user:
 
 ```bash
 # As root
-useradd -m -s /bin/bash quadwork
-echo "quadwork ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/quadwork
-chmod 440 /etc/sudoers.d/quadwork
+useradd -m -s /bin/bash quadplan
+echo "quadplan ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/quadplan
+chmod 440 /etc/sudoers.d/quadplan
 ```
 
 See the [VPS Installation Guide](install-vps.md#step-2-create-non-root-user-critical) for full setup.

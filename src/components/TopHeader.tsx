@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import AboutModal from "./AboutModal";
 
-const GITHUB_URL = "https://github.com/realproject7/quadwork";
+const GITHUB_URL = "https://github.com/realproject7/quadplan";
 
 const TAGLINE_VARIANTS = [
   "sleep.",

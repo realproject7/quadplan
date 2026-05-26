@@ -1,6 +1,6 @@
-# QuadWork — Mac Installation Guide
+# QuadPlan — Mac Installation Guide
 
-Step-by-step guide for installing QuadWork on macOS. Designed for both humans and AI coding agents.
+Step-by-step guide for installing QuadPlan on macOS. Designed for both humans and AI coding agents.
 
 ---
 
@@ -81,15 +81,15 @@ codex
 
 ---
 
-## Install QuadWork
+## Install QuadPlan
 
 ```bash
-npm install -g quadwork@latest
+npm install -g quadplan@latest
 ```
 
 Verify:
 ```bash
-quadwork --version
+quadplan --version
 # You should see the version number (e.g., 1.14.5)
 ```
 
@@ -100,7 +100,7 @@ quadwork --version
 ### Interactive setup
 
 ```bash
-quadwork init
+quadplan init
 ```
 
 > **This is interactive.** The operator will be prompted to configure their first project (name, repo, working directory, agent backends).
@@ -108,12 +108,12 @@ quadwork init
 ### Start the server
 
 ```bash
-quadwork start
+quadplan start
 ```
 
 You should see output like:
 ```
-QuadWork dashboard: http://localhost:8400
+QuadPlan dashboard: http://localhost:8400
 ```
 
 Open the dashboard URL in your browser to access the web UI.
@@ -131,7 +131,7 @@ Open the dashboard URL in your browser to access the web UI.
    - **Agent backends:** Choose Claude, Codex, or Gemini for each agent role
 4. Click **Create**
 
-QuadWork will:
+QuadPlan will:
 - Create worktree directories for each agent (e.g., `project-head/`, `project-dev/`, `project-re1/`, `project-re2/`)
 - Seed AGENTS.md files for each role
 
@@ -139,7 +139,7 @@ QuadWork will:
 
 ## Trust Prompt (Claude Code)
 
-On first launch, Claude Code agents may get stuck at a "Do you trust this directory?" prompt. QuadWork v1.14.5+ automatically pre-trusts worktree directories for Claude-configured agents during project creation.
+On first launch, Claude Code agents may get stuck at a "Do you trust this directory?" prompt. QuadPlan v1.14.5+ automatically pre-trusts worktree directories for Claude-configured agents during project creation.
 
 **If agents are still stuck** (e.g., upgraded from an older version), manually pre-trust each worktree:
 
@@ -153,24 +153,6 @@ cd /path/to/project-re2 && claude -p "echo ok"
 
 ---
 
-## Discord / Telegram Bridge (Optional)
-
-### Discord bridge
-
-1. Open the project page in the dashboard
-2. Click the **Discord** widget
-3. Enter your Discord bot token and channel ID
-4. Click **Start**
-
-### Telegram bridge
-
-1. Open the project page in the dashboard
-2. Click the **Telegram** widget
-3. Enter your Telegram bot token and chat ID
-4. Click **Start**
-
-> **Note:** Bridges are configured per-project in `~/.quadplan/config.json`. See the dashboard Telegram/Discord widgets for setup.
-
 ---
 
 ## Stopping & Restarting
@@ -178,15 +160,15 @@ cd /path/to/project-re2 && claude -p "echo ok"
 ```bash
 # Stop the server (Ctrl+C if running in foreground)
 # Or if running in background:
-quadwork stop
+quadplan stop
 
 # Restart
-quadwork start
+quadplan start
 ```
 
 For persistent background operation on Mac, consider using pm2:
 ```bash
 npm install -g pm2
-pm2 start "quadwork start" --name quadwork
+pm2 start "quadplan start" --name quadplan
 pm2 save
 ```
