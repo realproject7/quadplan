@@ -1,6 +1,6 @@
-# QuadWork — Windows Installation Guide (WSL2)
+# QuadPlan — Windows Installation Guide (WSL2)
 
-QuadWork requires a Unix environment (node-pty, lsof, shell). On Windows, use WSL2 (Windows Subsystem for Linux) to get a full Ubuntu environment. Once inside WSL2, the setup is identical to the Mac guide.
+QuadPlan requires a Unix environment (node-pty, lsof, shell). On Windows, use WSL2 (Windows Subsystem for Linux) to get a full Ubuntu environment. Once inside WSL2, the setup is identical to the Mac guide.
 
 ---
 
@@ -79,14 +79,14 @@ From here, the setup is identical. Follow **[docs/install-mac.md](install-mac.md
 This includes:
 - Claude Code + Codex CLI
 - CLI authentication
-- `npm install -g quadwork@latest`
-- `npx quadwork init`
+- `npm install -g quadplan@latest`
+- `npx quadplan init`
 
 ---
 
 ## Accessing the Dashboard
 
-QuadWork runs on `http://127.0.0.1:8400` by default. WSL2 shares localhost with Windows automatically — open that URL in your Windows browser (Chrome, Edge, etc.) and it will connect.
+QuadPlan runs on `http://127.0.0.1:8400` by default. WSL2 shares localhost with Windows automatically — open that URL in your Windows browser (Chrome, Edge, etc.) and it will connect.
 
 ---
 

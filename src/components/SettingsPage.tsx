@@ -102,7 +102,7 @@ const COPY = {
       "Remove legacy AgentChattr files left over from pre-v2 installs:",
     cleanupSingle: "To remove a single project's clone and config entry:",
     cleanupHelp:
-      "Both commands prompt for confirmation. Worktrees and source repos are never touched. See npx quadwork --help or the README's Disk Usage section for details.",
+      "Both commands prompt for confirmation. Worktrees and source repos are never touched. See npx quadplan --help or the README's Disk Usage section for details.",
     activeProjects: "Active Projects",
     projectName: "Project Name",
     githubRepo: "GitHub Repo",
@@ -180,7 +180,7 @@ const COPY = {
       "v2 이전 설치에서 남은 레거시 AgentChattr 파일을 제거합니다:",
     cleanupSingle: "특정 프로젝트의 클론과 설정 항목만 제거하려면:",
     cleanupHelp:
-      "두 명령 모두 확인 절차가 있습니다. 워크트리와 소스 저장소는 건드리지 않습니다. 자세한 내용은 npx quadwork --help 또는 README의 Disk Usage 섹션을 참고하세요.",
+      "두 명령 모두 확인 절차가 있습니다. 워크트리와 소스 저장소는 건드리지 않습니다. 자세한 내용은 npx quadplan --help 또는 README의 Disk Usage 섹션을 참고하세요.",
     activeProjects: "활성 프로젝트",
     projectName: "프로젝트 이름",
     githubRepo: "GitHub 저장소",
@@ -812,9 +812,9 @@ export default function SettingsPage() {
         <h2 className="text-[11px] text-text-muted uppercase tracking-wider mb-3">{t.cleanup}</h2>
         <div className="border border-border p-3 text-[11px] text-text-muted space-y-1">
           <p>{t.cleanupIntro}</p>
-          <pre className="mt-1 p-2 bg-bg-surface text-text rounded font-mono text-[11px]">npx quadwork cleanup --legacy</pre>
+          <pre className="mt-1 p-2 bg-bg-surface text-text rounded font-mono text-[11px]">npx quadplan cleanup --legacy</pre>
           <p className="mt-2">{t.cleanupSingle}</p>
-          <pre className="mt-1 p-2 bg-bg-surface text-text rounded font-mono text-[11px]">npx quadwork cleanup --project &lt;id&gt;</pre>
+          <pre className="mt-1 p-2 bg-bg-surface text-text rounded font-mono text-[11px]">npx quadplan cleanup --project &lt;id&gt;</pre>
           <p className="mt-2 text-text-muted/80">{t.cleanupHelp}</p>
         </div>
       </section>

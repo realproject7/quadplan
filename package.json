@@ -1,8 +1,9 @@
 {
-  "name": "quadwork",
+  "name": "quadplan",
   "version": "2.0.0",
-  "description": "Unified dashboard for multi-agent coding teams — 4 AI agents, one terminal",
+  "description": "Local-first planning team for pre-development proposals, tickets, and design review",
   "bin": {
+    "quadplan": "./bin/quadwork.js",
     "quadwork": "./bin/quadwork.js"
   },
   "files": [
@@ -36,11 +37,12 @@
     "terminal",
     "claude",
     "codex",
-    "quadwork"
+    "quadplan",
+    "planning"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/realproject7/quadwork.git"
+    "url": "https://github.com/realproject7/quadplan.git"
   },
   "license": "MIT",
   "dependencies": {

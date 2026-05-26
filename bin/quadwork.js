@@ -245,10 +245,10 @@ async function checkPrereqs(rl) {
       log(`  → /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`);
       log("");
       log("After installing, close and reopen your terminal, then run:");
-      log("  → npx quadwork init");
+      log("  → npx quadplan init");
       console.log("");
       fail("Homebrew is required before we can set up the remaining tools.");
-      log("Install Homebrew first, then re-run: npx quadwork init");
+      log("Install Homebrew first, then re-run: npx quadplan init");
       return false;
     }
   }
@@ -348,7 +348,7 @@ async function checkPrereqs(rl) {
 
   if (!hasClaude && !hasCodex) {
     fail("At least one AI CLI is required (Claude Code or Codex CLI).");
-    log("Install one and re-run: npx quadwork init");
+    log("Install one and re-run: npx quadplan init");
     allOk = false;
   }
 
@@ -438,7 +438,7 @@ async function checkPrereqs(rl) {
   } else {
     console.log("");
     log("Some prerequisites are missing. Fix the issues above and re-run:");
-    log("  → npx quadwork init");
+    log("  → npx quadplan init");
   }
 
   return allOk;
@@ -458,7 +458,7 @@ async function setupGitHub(rl) {
     return null;
   }
 
-  log("Enter the GitHub repo for your first project. You can add more later with `quadwork add-project`.");
+  log("Enter the GitHub repo for your first project. You can add more later with `quadplan add-project`.");
   const repo = await ask(rl, "GitHub repo (owner/repo)", "");
   if (!repo || !repo.includes("/")) {
     fail("Invalid repo format — use owner/repo");
@@ -566,7 +566,7 @@ async function setupAgents(rl, repo) {
   // Empty repos have no commits — git worktree add requires at least one.
   const headCheck = run("git", ["-C", absDir, "rev-parse", "HEAD"]);
   if (!headCheck || headCheck.includes("fatal")) {
-    run("git", ["-C", absDir, "commit", "--allow-empty", "-m", "Initial commit (created by QuadWork setup)"]);
+    run("git", ["-C", absDir, "commit", "--allow-empty", "-m", "Initial commit (created by QuadPlan setup)"]);
     const defaultBranch = run("git", ["-C", absDir, "symbolic-ref", "--short", "HEAD"]) || "main";
     run("git", ["-C", absDir, "push", "origin", defaultBranch]);
   }
@@ -650,7 +650,7 @@ async function setupAgents(rl, repo) {
   return { projectName, absDir, worktrees, repo, backend, backends };
 }
 
-// ─── Write QuadWork Config ──────────────────────────────────────────────────
+// ─── Write QuadPlan Config ──────────────────────────────────────────────────
 
 function seedProjectWorkspaceCli(workingDir, projectName) {
   if (!workingDir || !fs.existsSync(workingDir)) return;
@@ -693,8 +693,8 @@ function writeOvernightQueueFile(projectName, repo) {
   return true;
 }
 
-function writeQuadWorkConfig(setup) {
-  header("Writing QuadWork Config");
+function writeQuadPlanConfig(setup) {
+  header("Writing QuadPlan Config");
 
   const config = readConfig();
   // #405 / quadwork#278: ensure the global config has an
@@ -767,7 +767,7 @@ function writeQuadWorkConfig(setup) {
 async function cmdInit() {
   console.log("");
   console.log(`  ${c.cyan}${c.bold}╔══════════════════════════════════════════╗${c.reset}`);
-  console.log(`  ${c.cyan}${c.bold}║${c.reset}  ${c.white}${c.bold}QuadWork Init${c.reset}                           ${c.cyan}${c.bold}║${c.reset}`);
+  console.log(`  ${c.cyan}${c.bold}║${c.reset}  ${c.white}${c.bold}QuadPlan Init${c.reset}                           ${c.cyan}${c.bold}║${c.reset}`);
   console.log(`  ${c.cyan}${c.bold}║${c.reset}  ${c.dim}Global setup — projects via web UI${c.reset}       ${c.cyan}${c.bold}║${c.reset}`);
   console.log(`  ${c.cyan}${c.bold}╚══════════════════════════════════════════╝${c.reset}`);
   console.log(`\n  ${c.dim}Press Enter to accept defaults. Takes under 30 seconds.${c.reset}\n`);
@@ -779,14 +779,14 @@ async function cmdInit() {
     const prereqsOk = await checkPrereqs(rl);
     if (!prereqsOk) {
       console.log("");
-      log("Once everything is installed, re-run:  npx quadwork init");
+      log("Once everything is installed, re-run:  npx quadplan init");
       rl.close();
       process.exit(1);
     }
 
     // Step 2: Dashboard port
     header("Step 2: Dashboard Port");
-    const port = await ask(rl, "Port for the QuadWork dashboard (Enter for default)", "8400");
+    const port = await ask(rl, "Port for the QuadPlan dashboard (Enter for default)", "8400");
 
     // Write global config
     const config = readConfig();
@@ -806,7 +806,7 @@ async function cmdInit() {
     console.log(`  ${c.cyan}${c.bold}║${c.reset}                                                          ${c.cyan}${c.bold}║${c.reset}`);
     console.log(`  ${c.cyan}${c.bold}║${c.reset}   ${c.green}Next step:${c.reset}                                             ${c.cyan}${c.bold}║${c.reset}`);
     console.log(`  ${c.cyan}${c.bold}║${c.reset}                                                          ${c.cyan}${c.bold}║${c.reset}`);
-    console.log(`  ${c.cyan}${c.bold}║${c.reset}     ${c.cyan}${c.bold}npx quadwork start${c.reset}                                 ${c.cyan}${c.bold}║${c.reset}`);
+    console.log(`  ${c.cyan}${c.bold}║${c.reset}     ${c.cyan}${c.bold}npx quadplan start${c.reset}                                 ${c.cyan}${c.bold}║${c.reset}`);
     console.log(`  ${c.cyan}${c.bold}║${c.reset}                                                          ${c.cyan}${c.bold}║${c.reset}`);
     console.log(`  ${c.cyan}${c.bold}║${c.reset}   This launches the dashboard where you can create        ${c.cyan}${c.bold}║${c.reset}`);
     console.log(`  ${c.cyan}${c.bold}║${c.reset}   projects and start your AI agent team.                  ${c.cyan}${c.bold}║${c.reset}`);
@@ -825,27 +825,27 @@ async function cmdInit() {
 
 
 async function cmdStart() {
-  console.log("\n  QuadWork Start\n");
+  console.log("\n  QuadPlan Start\n");
 
   const config = readConfig();
   if (config.projects.length === 0) {
     warn("No projects configured yet. Create one at the setup page.");
   }
 
-  const quadworkDir = path.join(__dirname, "..");
+  const quadplanDir = path.join(__dirname, "..");
   const port = config.port || 8400;
 
   // Check that the pre-built frontend exists
-  const outDir = path.join(quadworkDir, "out");
+  const outDir = path.join(quadplanDir, "out");
   if (!fs.existsSync(outDir)) {
     warn("Frontend not found (out/ missing). API will work but UI won't load.");
     warn("If running from source, run: npm run build");
   }
 
   // Start single Express server (serves API + WebSocket + static frontend)
-  const serverDir = path.join(quadworkDir, "server");
+  const serverDir = path.join(quadplanDir, "server");
   if (!fs.existsSync(path.join(serverDir, "index.js"))) {
-    fail("Server not found. Run from the quadwork directory.");
+    fail("Server not found. Run from the quadplan directory.");
     process.exit(1);
   }
 
@@ -875,7 +875,7 @@ async function cmdStart() {
     ok("Stopped.");
     console.log("");
     log("To restart:");
-    log(`  ${c.dim}npx --yes quadwork start${c.reset}`);
+    log(`  ${c.dim}npx --yes quadplan start${c.reset}`);
     console.log("");
     process.exit(0);
   });
@@ -900,7 +900,7 @@ function stopPid(name, pidFileName) {
 }
 
 function cmdStop() {
-  console.log("\n  QuadWork Stop\n");
+  console.log("\n  QuadPlan Stop\n");
 
   let stopped = 0;
   if (stopPid("Telegram bridge", "tg-bridge.pid")) stopped++;
@@ -936,7 +936,7 @@ function cmdStop() {
 // ─── Add Project Command ────────────────────────────────────────────────────
 
 async function cmdAddProject() {
-  console.log("\n  QuadWork — Add Project\n");
+  console.log("\n  QuadPlan — Add Project\n");
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -947,7 +947,7 @@ async function cmdAddProject() {
     const setup = await setupAgents(rl, repo);
     if (!setup) { rl.close(); process.exit(1); }
 
-    writeQuadWorkConfig(setup);
+    writeQuadPlanConfig(setup);
 
     header("Project Added");
     log(`Project:      ${setup.projectName}`);
@@ -970,11 +970,11 @@ async function cmdAddProject() {
  * or by the legacy shared install left behind after migration (#188).
  *
  * Usage:
- *   npx quadwork cleanup --project <id>
+ *   npx quadplan cleanup --project <id>
  *     Removes ~/.quadplan/{id}/ and the matching entry from config.json.
  *     Leaves the user's worktrees and source repos completely alone.
  *
- *   npx quadwork cleanup --legacy
+ *   npx quadplan cleanup --legacy
  *     Removes the legacy shared ~/.quadplan/agentchattr/ install. Refuses
  *     to run unless every project in config.json already has its own
  *     working per-project clone (so nothing falls back onto the legacy
@@ -991,8 +991,8 @@ async function cmdCleanup() {
   if (!projectId && !legacy) {
     console.log(`
   Usage:
-    npx quadwork cleanup --project <id>   Remove a project's AgentChattr clone + config entry
-    npx quadwork cleanup --legacy         Remove the legacy ~/.quadplan/agentchattr/ install
+    npx quadplan cleanup --project <id>   Remove a project's AgentChattr clone + config entry
+    npx quadplan cleanup --legacy         Remove the legacy ~/.quadplan/agentchattr/ install
 `);
     process.exit(1);
   }
@@ -1052,7 +1052,7 @@ async function cmdCleanup() {
       if (stillDepends.length > 0) {
         fail(`Refusing to remove legacy install — these projects still depend on it:`);
         for (const id of stillDepends) console.log(`    - ${id}`);
-        warn(`Run 'npx quadwork start' to migrate them (#188), then re-run cleanup --legacy.`);
+        warn(`Run 'npx quadplan start' to migrate them (#188), then re-run cleanup --legacy.`);
         return;
       }
 
@@ -1073,7 +1073,7 @@ async function cmdCleanup() {
 
 function cmdDoctor() {
   console.log("");
-  console.log("QuadWork doctor");
+  console.log("QuadPlan doctor");
   console.log("===============");
   console.log("Chat mode: file-based (AC removed)");
   console.log("");
@@ -1202,7 +1202,7 @@ async function cmdMigrateAgentSlugs() {
   ok(`Config saved. ${totalChanged} project(s) migrated.`);
   log("");
   log("Next steps:");
-  log("  1. Run 'npx quadwork start' to restart with the new slugs");
+  log("  1. Run 'npx quadplan start' to restart with the new slugs");
   log("  2. Old chat messages keep their original sender — no history rewrite");
 }
 
@@ -1214,7 +1214,7 @@ function cmdAcRestore() {
   const projectFilter = projectFlagIdx >= 0 ? args[projectFlagIdx + 1] : null;
 
   if (projectFlagIdx >= 0 && (!projectFilter || projectFilter.startsWith("--"))) {
-    warn("--project requires a project ID. Usage: npx quadwork ac-restore --project <id>");
+    warn("--project requires a project ID. Usage: npx quadplan ac-restore --project <id>");
     process.exit(1);
   }
 
@@ -1277,12 +1277,12 @@ switch (command) {
   }
   default:
     console.log(`
-  Usage: quadwork <command>
+  Usage: quadplan <command>
 
   Commands:
     init          Run setup wizard (prereqs, port)
-    start         Start the QuadWork dashboard and agents
-    stop          Stop all QuadWork processes
+    start         Start the QuadPlan dashboard and agents
+    stop          Stop all QuadPlan processes
     add-project   Add a project via CLI (alternative to web UI /setup)
     cleanup       Reclaim disk space (--project <id> or --legacy)
     doctor        Report project configuration status
@@ -1290,19 +1290,19 @@ switch (command) {
     ac-restore           Restore file-chat JSONL back to AC format
 
   Workflow:
-    1. npx quadwork init     — one-time setup (installs prerequisites)
-    2. npx quadwork start    — launch dashboard, create projects, run agents
-    3. npx quadwork stop     — stop everything when done
+    1. npx quadplan init     — one-time setup (installs prerequisites)
+    2. npx quadplan start    — launch dashboard, create projects, run agents
+    3. npx quadplan stop     — stop everything when done
 
   Smart default:
-    npx quadwork             — runs 'init' on fresh install, 'start' if configured
+    npx quadplan             — runs 'init' on fresh install, 'start' if configured
 
   Examples:
-    npx quadwork init
-    npx quadwork start
-    npx quadwork stop
-    npx quadwork cleanup --project my-project
-    npx quadwork cleanup --legacy
+    npx quadplan init
+    npx quadplan start
+    npx quadplan stop
+    npx quadplan cleanup --project my-project
+    npx quadplan cleanup --legacy
 `);
     process.exit(1);
 }
