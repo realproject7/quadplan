@@ -62,7 +62,7 @@ export default function HomeEmptyState({ hasProjects }: HomeEmptyStateProps) {
           </span>
         ) : (
           <Link
-            href="/setup"
+            href="/settings#butler"
             className="px-4 py-2 text-[12px] font-semibold text-bg bg-accent hover:bg-accent-dim transition-colors"
           >
             {t.addProject}

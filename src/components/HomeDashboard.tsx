@@ -223,9 +223,10 @@ export default function HomeDashboard() {
               </Link>
             ))}
 
-            {/* + New Project */}
+            {/* + New Project — route through Butler when enabled */}
             <Link
-              href="/setup"
+              href={butlerEnabled ? "#butler" : "/settings#butler"}
+              onClick={butlerEnabled ? (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); } : undefined}
               className="border border-dashed border-border p-4 flex items-center justify-center text-text-muted hover:text-text hover:border-text-muted transition-colors min-h-[88px]"
             >
               <span className="text-sm">+ {t.newProject}</span>
