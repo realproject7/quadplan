@@ -19,9 +19,11 @@
 3. Dev creates branch: `task/<issue-number>-<slug>`
 4. Dev opens PR with `Fixes #<issue>`
 5. Dev requests review from **@re1 AND @re2** (NOT Head)
-6. RE1/RE2 review PR (APPROVE/REQUEST CHANGES/BLOCK) — send verdict to **@dev**
+6. RE1/RE2 review PR (APPROVE/REQUEST_CHANGES/BLOCK) — send verdict to **@dev**
 7. Dev aggregates both approvals, then notifies **@head**
 8. Head verifies approvals, merges; Issue auto-closes
+
+> Note: This workflow applies to the current QuadPlan development project (which uses a Dev agent). For QuadPlan end-user projects, HEAD is both lead and worker — see agent templates.
 
 Branch naming (strict): `task/<issue-number>-<short-slug>`
 

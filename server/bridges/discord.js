@@ -31,7 +31,7 @@ function getDiscordLib() {
     try {
       Discord = require("discord.js");
     } catch {
-      throw new Error("Discord bridge requires discord.js — reinstall or update QuadWork to get it");
+      throw new Error("Discord bridge requires discord.js — reinstall or update QuadPlan to get it");
     }
   }
   return Discord;

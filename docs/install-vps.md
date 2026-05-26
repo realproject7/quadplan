@@ -336,8 +336,8 @@ Save credentials for reference:
 
 ```bash
 cat > ~/.quadplan/.env << 'EOF'
-QUADWORK_HTTP_USER=admin
-QUADWORK_HTTP_PASS=YOUR_GENERATED_PASSWORD
+QUADPLAN_HTTP_USER=admin
+QUADPLAN_HTTP_PASS=YOUR_GENERATED_PASSWORD
 EOF
 chmod 600 ~/.quadplan/.env
 ```

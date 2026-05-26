@@ -7,7 +7,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const GITHUB_URL = "https://github.com/realproject7/quadwork";
+const GITHUB_URL = "https://github.com/realproject7/quadplan";
 
 export default function AboutModal({ open, onClose }: AboutModalProps) {
   useEffect(() => {

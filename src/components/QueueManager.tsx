@@ -53,10 +53,10 @@ function generateTemplate(issues: Issue[], repo: string): string {
   lines.push("");
   lines.push("## Rules");
   lines.push("");
-  lines.push("1. Assign ONE ticket at a time to @dev");
-  lines.push("2. Wait for @re1 AND @re2 to both approve before merging");
-  lines.push("3. After merge, immediately assign the next ticket");
-  lines.push("4. PR titles: [#<issue>] Short description");
+  lines.push("1. Work on ONE artifact at a time");
+  lines.push("2. Request review from @re1 AND @re2 when ready");
+  lines.push("3. Wait for both to approve before marking done");
+  lines.push("4. After completion, immediately start the next item");
   lines.push("5. Branch naming: task/<issue-number>-<slug>");
   lines.push("6. NEVER store keys/secrets");
   lines.push("7. Communicate via project chat by tagging agents");
@@ -67,9 +67,9 @@ function generateTemplate(issues: Issue[], repo: string): string {
 }
 
 function generatePrompt(queueContent: string, repo: string): string {
-  return `@head Work through this queue top-to-bottom. Assign ONE ticket at a time to
-   @dev. After each PR is merged, assign the next ticket immediately.
-  All tickets are autonomous — no operator gates.
+  return `@head Work through this queue top-to-bottom. Process ONE artifact at a time.
+  Request review from @re1 and @re2 when ready. After both approve, mark done and continue.
+  All items are autonomous — no operator gates.
 
   IMPORTANT — Repo context:
   - All work is on repo ${repo}.
@@ -78,7 +78,7 @@ function generatePrompt(queueContent: string, repo: string): string {
 
 ${queueContent}
 
-  Start now. Assign the first ticket to @dev.`;
+  Start now. Begin the first item.`;
 }
 
 export default function QueueManager({ projectId }: QueueManagerProps) {

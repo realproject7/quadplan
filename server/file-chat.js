@@ -54,7 +54,7 @@ function acquireWriterLock(projectId) {
     if (existingPid) {
       try {
         process.kill(existingPid, 0);
-        throw new Error(`QuadWork already running on this directory (pid ${existingPid})`);
+        throw new Error(`QuadPlan already running on this directory (pid ${existingPid})`);
       } catch (err) {
         if (err.code === "ESRCH") {
           console.warn(`[file-chat] Stale writer lock for project ${projectId} (pid ${existingPid}), replacing`);
