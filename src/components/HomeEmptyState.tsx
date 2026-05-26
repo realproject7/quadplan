@@ -12,9 +12,9 @@ interface HomeEmptyStateProps {
 const COPY = {
   en: {
     headlineWithProjects: "Pick a project from the sidebar to start working",
-    headlineNoProjects: "Welcome to QuadWork — let's set up your first AI dev team",
-    subtextWithProjects: "Each project has its own 4-agent team and chat. Click any chip in the left sidebar to open one.",
-    subtextNoProjects: "QuadWork runs Head, Dev, and two Reviewers as a team. They open issues, write code, review PRs, and merge — while you sleep.",
+    headlineNoProjects: "Welcome to QuadPlan — let's set up your first planning team",
+    subtextWithProjects: "Each project has its own 3-agent team and chat. Click any chip in the left sidebar to open one.",
+    subtextNoProjects: "QuadPlan runs HEAD and two Reviewers as a team. They create proposals, write tickets, review designs, and approve — while you sleep.",
     lookSidebar: "← look at the left sidebar",
     addProject: "Add Your First Project →",
     howToWork: "How to Work",
@@ -22,9 +22,9 @@ const COPY = {
   },
   ko: {
     headlineWithProjects: "사이드바에서 프로젝트를 골라 작업을 시작하세요",
-    headlineNoProjects: "QuadWork에 오신 걸 환영합니다\n- 첫 AI 개발 팀을 설정해볼까요",
-    subtextWithProjects: "각 프로젝트는 자체 4인 에이전트 팀과 채팅을 가집니다.\n왼쪽 사이드바에서 아무 프로젝트나 눌러 열 수 있습니다.",
-    subtextNoProjects: "QuadWork는 Head, Dev, Reviewer 둘을 한 팀으로 운영합니다.\n이슈를 만들고, 코드를 작성하고, PR을 리뷰하고, 병합합니다.\n당신이 쉬는 동안에도요.",
+    headlineNoProjects: "QuadPlan에 오신 걸 환영합니다\n- 첫 기획 팀을 설정해볼까요",
+    subtextWithProjects: "각 프로젝트는 자체 3인 에이전트 팀과 채팅을 가집니다.\n왼쪽 사이드바에서 아무 프로젝트나 눌러 열 수 있습니다.",
+    subtextNoProjects: "QuadPlan은 HEAD와 Reviewer 둘을 한 팀으로 운영합니다.\n제안서를 만들고, 티켓을 작성하고, 디자인을 리뷰하고, 승인합니다.\n당신이 쉬는 동안에도요.",
     lookSidebar: "← 왼쪽 사이드바를 보세요",
     addProject: "첫 프로젝트 추가 →",
     howToWork: "사용 방법",

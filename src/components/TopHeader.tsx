@@ -180,7 +180,7 @@ export default function TopHeader() {
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-1.5 text-sm font-bold text-accent hover:text-blue-400 shrink-0">
             <img src="/icon.svg" alt="" width={18} height={18} className="inline-block" />
-            QuadWork
+            QuadPlan
           </Link>
           <span className="hidden sm:inline text-neutral-600">|</span>
           <span className="hidden sm:inline text-[13px] text-neutral-400 truncate">
@@ -255,7 +255,7 @@ export default function TopHeader() {
           <button
             type="button"
             onClick={() => setAboutOpen(true)}
-            aria-label="About QuadWork"
+            aria-label="About QuadPlan"
             className="rounded p-1 text-neutral-400 hover:bg-white/5 hover:text-white"
           >
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -270,7 +270,7 @@ export default function TopHeader() {
             rel="noopener noreferrer"
             className="text-[12px] text-neutral-400 hover:text-white"
           >
-            QuadWork github
+            QuadPlan github
           </a>
         </div>
       </header>

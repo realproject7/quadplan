@@ -10,7 +10,7 @@ interface HowToWorkModalProps {
 
 const COPY = {
   en: {
-    title: "How QuadWork builds your code",
+    title: "How QuadPlan plans your project",
     subtitle: "Five steps from your one-line request to a merged pull request.",
     close: "Close",
     helpClass: "",
@@ -38,7 +38,7 @@ const COPY = {
     ],
   },
   ko: {
-    title: "QuadWork가 코드를 만드는 방식",
+    title: "QuadPlan이 프로젝트를 기획하는 방식",
     subtitle: "한 줄 요청에서 병합된 풀 리퀘스트까지 가는 5단계입니다.",
     close: "닫기",
     helpClass: "ko-help",

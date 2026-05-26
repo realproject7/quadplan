@@ -81,7 +81,7 @@ export default function DiscordSetupModal({ open, initialChannelId = "", onClose
             <h3 className="text-[13px] font-semibold text-white">Step 1 — Create a Discord Application + Bot</h3>
             <ol className="mt-1 pl-4 list-decimal space-y-0.5 text-neutral-300">
               <li>Go to the <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Discord Developer Portal</a>.</li>
-              <li>Click <b>New Application</b> &rarr; name it (e.g. &quot;QuadWork&quot;) &rarr; <b>Create</b>.</li>
+              <li>Click <b>New Application</b> &rarr; name it (e.g. &quot;QuadPlan&quot;) &rarr; <b>Create</b>.</li>
               <li>Go to the <b>Bot</b> tab in the left sidebar.</li>
               <li>Click <b>Reset Token</b> &rarr; copy the bot token. Save it somewhere safe.</li>
             </ol>
