@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-  <title>quadplan-icon</title>
-  <rect width="1024" height="1024" rx="204" fill="#0a0a0a"/>
-  <g transform="translate(85, 85)">
-    <!-- Quad-grid planning mark -->
+<svg width="854" height="854" viewBox="0 0 854 854" xmlns="http://www.w3.org/2000/svg">
+  <title>quadplan-symbol</title>
+  <!-- Quad-grid planning mark: 2x2 nodes with connecting lines -->
+  <!-- One active node (top-left) signals the current planning phase -->
+  <g fill="none" stroke-width="3">
+    <!-- Grid lines connecting the 4 nodes -->
     <line x1="270" y1="270" x2="584" y2="270" stroke="#5a2a52" stroke-width="2.5"/>
     <line x1="270" y1="584" x2="584" y2="584" stroke="#5a2a52" stroke-width="2.5"/>
     <line x1="270" y1="270" x2="270" y2="584" stroke="#5a2a52" stroke-width="2.5"/>
     <line x1="584" y1="270" x2="584" y2="584" stroke="#5a2a52" stroke-width="2.5"/>
+    <!-- Diagonal cross-links -->
     <line x1="270" y1="270" x2="584" y2="584" stroke="#5a2a52" stroke-width="1.5" stroke-dasharray="8 6"/>
     <line x1="584" y1="270" x2="270" y2="584" stroke="#5a2a52" stroke-width="1.5" stroke-dasharray="8 6"/>
-    <!-- Inactive nodes -->
+    <!-- Inactive nodes (dimmed magenta) -->
     <circle cx="584" cy="270" r="24" fill="#30242f" stroke="#5a2a52" stroke-width="2.5"/>
     <circle cx="270" cy="584" r="24" fill="#30242f" stroke="#5a2a52" stroke-width="2.5"/>
     <circle cx="584" cy="584" r="24" fill="#30242f" stroke="#5a2a52" stroke-width="2.5"/>
-    <!-- Active node -->
+    <!-- Active node (top-left, neon magenta) — the current planning phase -->
     <circle cx="270" cy="270" r="28" fill="#ff2bd6"/>
+    <!-- Glow ring on active node -->
     <circle cx="270" cy="270" r="42" fill="none" stroke="#ff2bd6" stroke-width="2" opacity="0.35"/>
   </g>
 </svg>

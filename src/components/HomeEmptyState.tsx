@@ -50,7 +50,7 @@ export default function HomeEmptyState({ hasProjects }: HomeEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center px-6 py-12 border border-border bg-bg-surface">
       {/* #446: QuadWork symbol replaces the generic agent-team icon */}
-      <img src="/quadwork-symbol.svg" alt="" width={64} height={64} aria-hidden />
+      <img src="/quadplan-symbol.svg" alt="" width={64} height={64} aria-hidden />
 
       <h1 className={`mt-5 text-lg font-semibold text-text max-w-md whitespace-pre-line ${t.helpClass}`}>{headline}</h1>
       <p className={`mt-2 text-[12px] text-text-muted leading-relaxed max-w-md whitespace-pre-line ${t.helpClass}`}>{subtext}</p>
