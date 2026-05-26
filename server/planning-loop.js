@@ -11,13 +11,23 @@ function createLoopState(opts = {}) {
   const intervalMin = SUPPORTED_INTERVALS.includes(opts.intervalMin)
     ? opts.intervalMin
     : DEFAULT_INTERVAL_MIN;
+  const enabled = !!opts.enabled;
+  const knownStates = new Set(Object.values(LOOP_STATES));
+  let state;
+  if (!enabled) {
+    state = LOOP_STATES.PAUSED;
+  } else if (opts.state && knownStates.has(opts.state)) {
+    state = opts.state;
+  } else {
+    state = LOOP_STATES.RUNNING;
+  }
   return {
-    enabled: !!opts.enabled,
+    enabled,
     intervalMin,
     intervalMs: intervalMin * 60 * 1000,
-    state: opts.enabled ? LOOP_STATES.RUNNING : LOOP_STATES.PAUSED,
+    state,
     lastPulse: opts.lastPulse || null,
-    nextPulse: opts.enabled ? computeNextPulse(opts.lastPulse, intervalMin) : null,
+    nextPulse: enabled ? (opts.nextPulse || computeNextPulse(opts.lastPulse, intervalMin)) : null,
     lastError: opts.lastError || null,
   };
 }

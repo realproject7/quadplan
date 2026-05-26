@@ -45,6 +45,27 @@ describe("createLoopState", () => {
     const s = createLoopState({ enabled: true, intervalMin: 7 });
     assert.equal(s.intervalMin, 10);
   });
+
+  it("rehydrates persisted error state", () => {
+    const s = createLoopState({ enabled: true, state: "error", lastError: "Chat send failed", intervalMin: 10, lastPulse: Date.now() - 60000 });
+    assert.equal(s.state, LOOP_STATES.ERROR);
+    assert.equal(s.lastError, "Chat send failed");
+    assert.equal(s.enabled, true);
+    assert.ok(s.nextPulse > 0);
+  });
+
+  it("rehydrates persisted running state with nextPulse", () => {
+    const futureNext = Date.now() + 300000;
+    const s = createLoopState({ enabled: true, state: "running", intervalMin: 5, nextPulse: futureNext, lastPulse: Date.now() - 60000 });
+    assert.equal(s.state, LOOP_STATES.RUNNING);
+    assert.equal(s.nextPulse, futureNext);
+  });
+
+  it("forces paused when enabled is false regardless of persisted state", () => {
+    const s = createLoopState({ enabled: false, state: "running", intervalMin: 10 });
+    assert.equal(s.state, LOOP_STATES.PAUSED);
+    assert.equal(s.nextPulse, null);
+  });
 });
 
 describe("computeNextPulse", () => {
