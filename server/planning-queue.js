@@ -146,10 +146,72 @@ function statusToProgress(status) {
   return map[status] ?? 0;
 }
 
+function statusToLabel(status) {
+  const map = {
+    queued: "Queued",
+    drafting: "Drafting",
+    ready_for_review: "Ready for review",
+    re1_changes_requested: "RE1 changes requested",
+    re2_changes_requested: "RE2 changes requested",
+    approved_by_re1: "RE1 approved",
+    approved_by_re2: "RE2 approved",
+    approved: "Approved",
+    done: "Done",
+  };
+  return map[status] || status || "Unknown";
+}
+
+function resolveEffectiveStatus(artifact) {
+  if (!artifact) return "queued";
+  if (artifact.status === "done" || artifact.status === "approved") return artifact.status;
+  const { re1, re2 } = artifact.review || {};
+  if (re1 === "approved" && re2 === "approved") return "approved";
+  if (re1 === "approved" && re2 !== "approved") return "approved_by_re1";
+  if (re2 === "approved" && re1 !== "approved") return "approved_by_re2";
+  if (re1 === "changes_requested") return "re1_changes_requested";
+  if (re2 === "changes_requested") return "re2_changes_requested";
+  return artifact.status || "queued";
+}
+
+function summarizeBatch(artifacts) {
+  if (!artifacts || artifacts.length === 0) {
+    return { total: 0, done: 0, approved: 0, inReview: 0, drafting: 0, queued: 0, progress: 0 };
+  }
+  let done = 0, approved = 0, inReview = 0, drafting = 0, queued = 0;
+  let totalProgress = 0;
+
+  for (const a of artifacts) {
+    const effective = resolveEffectiveStatus(a);
+    const p = statusToProgress(effective);
+    totalProgress += p;
+
+    if (effective === "done") done++;
+    else if (effective === "approved") approved++;
+    else if (effective === "ready_for_review" || effective === "re1_changes_requested" ||
+             effective === "re2_changes_requested" || effective === "approved_by_re1" ||
+             effective === "approved_by_re2") inReview++;
+    else if (effective === "drafting") drafting++;
+    else queued++;
+  }
+
+  return {
+    total: artifacts.length,
+    done,
+    approved,
+    inReview,
+    drafting,
+    queued,
+    progress: Math.round(totalProgress / artifacts.length),
+  };
+}
+
 module.exports = {
   parsePlanningQueue,
   readPlanningQueue,
   statusToProgress,
+  statusToLabel,
+  resolveEffectiveStatus,
+  summarizeBatch,
   ARTIFACT_TYPES,
   ARTIFACT_STATUSES,
 };

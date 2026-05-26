@@ -1,6 +1,6 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
-const { parsePlanningQueue, statusToProgress, ARTIFACT_TYPES, ARTIFACT_STATUSES } = require("./planning-queue");
+const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch, ARTIFACT_TYPES, ARTIFACT_STATUSES } = require("./planning-queue");
 
 describe("parsePlanningQueue", () => {
   it("parses a full planning queue with artifact details", () => {
@@ -178,5 +178,89 @@ describe("constants", () => {
     assert.ok(ARTIFACT_STATUSES.has("done"));
     assert.ok(ARTIFACT_STATUSES.has("approved_by_re1"));
     assert.equal(ARTIFACT_STATUSES.size, 9);
+  });
+});
+
+describe("statusToLabel", () => {
+  it("maps all known statuses to labels", () => {
+    assert.equal(statusToLabel("queued"), "Queued");
+    assert.equal(statusToLabel("drafting"), "Drafting");
+    assert.equal(statusToLabel("ready_for_review"), "Ready for review");
+    assert.equal(statusToLabel("re1_changes_requested"), "RE1 changes requested");
+    assert.equal(statusToLabel("approved_by_re1"), "RE1 approved");
+    assert.equal(statusToLabel("approved"), "Approved");
+    assert.equal(statusToLabel("done"), "Done");
+  });
+
+  it("returns status string for unknown status", () => {
+    assert.equal(statusToLabel("custom"), "custom");
+  });
+
+  it("returns Unknown for empty/null", () => {
+    assert.equal(statusToLabel(""), "Unknown");
+    assert.equal(statusToLabel(null), "Unknown");
+  });
+});
+
+describe("resolveEffectiveStatus", () => {
+  it("returns approved when both reviewers approve", () => {
+    const a = { status: "ready_for_review", review: { re1: "approved", re2: "approved" } };
+    assert.equal(resolveEffectiveStatus(a), "approved");
+  });
+
+  it("returns approved_by_re1 when only RE1 approves", () => {
+    const a = { status: "ready_for_review", review: { re1: "approved", re2: "pending" } };
+    assert.equal(resolveEffectiveStatus(a), "approved_by_re1");
+  });
+
+  it("returns approved_by_re2 when only RE2 approves", () => {
+    const a = { status: "ready_for_review", review: { re1: "pending", re2: "approved" } };
+    assert.equal(resolveEffectiveStatus(a), "approved_by_re2");
+  });
+
+  it("returns changes_requested when RE1 requests changes", () => {
+    const a = { status: "ready_for_review", review: { re1: "changes_requested", re2: "pending" } };
+    assert.equal(resolveEffectiveStatus(a), "re1_changes_requested");
+  });
+
+  it("preserves done and approved statuses", () => {
+    assert.equal(resolveEffectiveStatus({ status: "done", review: { re1: "pending", re2: "pending" } }), "done");
+    assert.equal(resolveEffectiveStatus({ status: "approved", review: { re1: "pending", re2: "pending" } }), "approved");
+  });
+
+  it("returns queued for null artifact", () => {
+    assert.equal(resolveEffectiveStatus(null), "queued");
+  });
+});
+
+describe("summarizeBatch", () => {
+  it("summarizes a mixed batch", () => {
+    const artifacts = [
+      { status: "done", review: { re1: "approved", re2: "approved" } },
+      { status: "drafting", review: { re1: "pending", re2: "pending" } },
+      { status: "ready_for_review", review: { re1: "approved", re2: "approved" } },
+      { status: "queued", review: { re1: "pending", re2: "pending" } },
+    ];
+    const s = summarizeBatch(artifacts);
+    assert.equal(s.total, 4);
+    assert.equal(s.done, 1);
+    assert.equal(s.approved, 1);
+    assert.equal(s.drafting, 1);
+    assert.equal(s.queued, 1);
+    assert.ok(s.progress > 0 && s.progress < 100);
+  });
+
+  it("returns zeros for empty array", () => {
+    const s = summarizeBatch([]);
+    assert.equal(s.total, 0);
+    assert.equal(s.progress, 0);
+  });
+
+  it("returns 100% for all-done batch", () => {
+    const artifacts = [
+      { status: "done", review: { re1: "approved", re2: "approved" } },
+      { status: "done", review: { re1: "approved", re2: "approved" } },
+    ];
+    assert.equal(summarizeBatch(artifacts).progress, 100);
   });
 });
