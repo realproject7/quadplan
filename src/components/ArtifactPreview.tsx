@@ -18,6 +18,8 @@ const COPY = {
     forbidden: "Access denied — file outside allowed directories",
     error: "Could not load preview",
     unsupported: "Preview not supported for this file type",
+    openInBrowser: "Open in Browser",
+    browserHint: "Use browser dev tools to check responsiveness at desktop/tablet/mobile widths",
   },
   ko: {
     selectArtifact: "미리보기할 산출물을 선택하세요",
@@ -26,6 +28,8 @@ const COPY = {
     forbidden: "접근 거부 — 허용된 디렉터리 밖의 파일",
     error: "미리보기를 불러올 수 없습니다",
     unsupported: "이 파일 형식은 미리보기를 지원하지 않습니다",
+    openInBrowser: "브라우저에서 열기",
+    browserHint: "브라우저 개발자 도구로 데스크톱/태블릿/모바일 너비에서 반응형을 확인하세요",
   },
 } as const;
 
@@ -98,14 +102,28 @@ export default function ArtifactPreview({ projectId, artifactPath }: ArtifactPre
   }
 
   if (ext === ".html") {
+    const serveUrl = `/api/artifact-serve/${encodeURIComponent(projectId)}/${artifactPath!}`;
     return (
-      <div className="h-full overflow-auto p-4">
-        <iframe
-          srcDoc={content}
-          sandbox="allow-same-origin"
-          className="w-full h-full border border-border bg-white min-h-[400px]"
-          title="Design preview"
-        />
+      <div className="h-full flex flex-col">
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-border shrink-0">
+          <a
+            href={serveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2 py-0.5 text-[10px] text-accent border border-accent/40 hover:bg-accent/10 transition-colors"
+          >
+            {t.openInBrowser}
+          </a>
+          <span className="text-[9px] text-text-muted">{t.browserHint}</span>
+        </div>
+        <div className="flex-1 min-h-0 p-4">
+          <iframe
+            src={serveUrl}
+            sandbox="allow-same-origin"
+            className="w-full h-full border border-border bg-white min-h-[400px]"
+            title="Design preview"
+          />
+        </div>
       </div>
     );
   }

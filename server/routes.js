@@ -15,7 +15,7 @@ const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
 const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
 const { sendPlanningPulse } = require("./planning-loop-pulse");
-const { discoverArtifacts, readArtifactContent } = require("./artifact-preview");
+const { discoverArtifacts, readArtifactContent, isPathSafe, getAllowedRoots } = require("./artifact-preview");
 
 const router = express.Router();
 
@@ -1908,6 +1908,46 @@ router.get("/api/artifact-preview", (req, res) => {
   if (!result.ok) return res.status(result.error === "Path outside allowed directories" ? 403 : 404).json({ error: result.error });
 
   return res.json({ content: result.content, ext: result.ext });
+});
+
+const MIME_TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".md": "text/plain; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+};
+
+router.get("/api/artifact-serve/:project/*filepath", (req, res) => {
+  const projectId = req.params.project;
+  const filePath = Array.isArray(req.params.filepath) ? req.params.filepath.join("/") : req.params.filepath;
+  if (!projectId || !filePath) return res.status(400).send("Missing project or path");
+
+  const { readArtifactContentRaw } = require("./artifact-preview");
+  const result = readArtifactContentRaw(projectId, filePath);
+  if (!result.ok) {
+    const code = result.error === "Path outside allowed directories" || result.error === "Symlinks not allowed" ? 403 : 404;
+    return res.status(code).send(result.error);
+  }
+
+  const ext = result.ext || "";
+  const mime = MIME_TYPES[ext] || "application/octet-stream";
+  res.setHeader("Content-Type", mime);
+  if (ext === ".html") {
+    res.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-inline'; script-src 'none'");
+  }
+
+  if (result.binary) {
+    return res.send(result.buffer);
+  }
+  return res.send(result.content);
 });
 
 const _planningLoopTimers = new Map();

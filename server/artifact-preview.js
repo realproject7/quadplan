@@ -113,9 +113,43 @@ function readArtifactContent(projectId, relativePath) {
   }
 }
 
+const TEXT_EXTS = new Set([".html", ".css", ".js", ".json", ".md", ".txt", ".svg"]);
+
+function readArtifactContentRaw(projectId, relativePath) {
+  const roots = getAllowedRoots(projectId);
+  if (!roots || roots.length === 0) return { ok: false, error: "No configured roots" };
+
+  const paths = resolveProjectPaths(projectId);
+  if (!paths) return { ok: false, error: "Unknown project" };
+
+  const workingDir = resolveWorkingDir(paths);
+  if (!workingDir) return { ok: false, error: "No configured working directory" };
+
+  const fullPath = path.resolve(workingDir, relativePath);
+
+  if (!fs.existsSync(fullPath)) return { ok: false, error: "File not found" };
+
+  const stat = fs.lstatSync(fullPath);
+  if (stat.isSymbolicLink()) return { ok: false, error: "Symlinks not allowed" };
+  if (!stat.isFile()) return { ok: false, error: "Not a file" };
+
+  if (!isPathSafe(fullPath, roots)) return { ok: false, error: "Path outside allowed directories" };
+
+  const ext = path.extname(fullPath).toLowerCase();
+  try {
+    if (TEXT_EXTS.has(ext)) {
+      return { ok: true, content: fs.readFileSync(fullPath, "utf-8"), ext, binary: false };
+    }
+    return { ok: true, buffer: fs.readFileSync(fullPath), ext, binary: true };
+  } catch (err) {
+    return { ok: false, error: err.message || "Read failed" };
+  }
+}
+
 module.exports = {
   isPathSafe,
   getAllowedRoots,
   discoverArtifacts,
   readArtifactContent,
+  readArtifactContentRaw,
 };
