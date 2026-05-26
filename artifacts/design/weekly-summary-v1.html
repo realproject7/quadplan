@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Summary — Habit Tracker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: #e8e2e8;
+      font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+      color: #ff2bd6;
+    }
+    .subtitle {
+      font-size: 11px;
+      color: #8a7f8a;
+      margin-bottom: 24px;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      position: relative;
+    }
+    .table-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 24px;
+      background: linear-gradient(to right, transparent, #0a0a0a);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .table-wrapper.scrollable::after {
+      opacity: 1;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 500px;
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: center;
+      border: 1px solid #30242f;
+    }
+    th {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #8a7f8a;
+      background: #111111;
+      font-weight: 500;
+    }
+    th:first-child, td:first-child {
+      text-align: left;
+      font-weight: 600;
+      min-width: 100px;
+    }
+    td.today {
+      background: rgba(255, 43, 214, 0.08);
+      border-color: #5a2a52;
+    }
+    .check {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      position: relative;
+    }
+    .check::before {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: solid #00ff88;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .miss {
+      color: #8a7f8a;
+      font-size: 10px;
+    }
+    .value {
+      color: #e8e2e8;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .streak {
+      font-size: 10px;
+      color: #ff2bd6;
+      font-weight: 600;
+    }
+    .summary {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid #30242f;
+      background: #111111;
+      font-size: 11px;
+      color: #8a7f8a;
+    }
+    .summary strong { color: #e8e2e8; }
+  </style>
+</head>
+<body>
+  <h1>Weekly Summary</h1>
+  <p class="subtitle">May 19 — May 25, 2026</p>
+
+  <div class="table-wrapper" id="tableWrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Habit</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+          <th>Sun</th>
+          <th>Streak</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Exercise</td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td><span class="miss">—</span></td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td class="today"><span class="check"></span></td>
+          <td><span class="streak">4d</span></td>
+        </tr>
+        <tr>
+          <td>Reading</td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td><span class="check"></span></td>
+          <td class="today"><span class="check"></span></td>
+          <td><span class="streak">7d</span></td>
+        </tr>
+        <tr>
+          <td>Water (glasses)</td>
+          <td><span class="value">8</span></td>
+          <td><span class="value">6</span></td>
+          <td><span class="value">7</span></td>
+          <td><span class="value">8</span></td>
+          <td><span class="value">5</span></td>
+          <td><span class="value">8</span></td>
+          <td class="today"><span class="value">7</span></td>
+          <td><span class="streak">7d</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="summary">
+    <strong>Week completion:</strong> Exercise 6/7 (86%) · Reading 7/7 (100%) · Water avg 7.0/day
+  </div>
+
+  <script>
+    // Detect scrollable overflow and show gradient hint
+    const wrapper = document.getElementById('tableWrapper');
+    function checkScroll() {
+      if (wrapper.scrollWidth > wrapper.clientWidth) {
+        wrapper.classList.add('scrollable');
+      } else {
+        wrapper.classList.remove('scrollable');
+      }
+    }
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+  </script>
+</body>
+</html>
