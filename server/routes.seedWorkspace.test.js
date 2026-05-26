@@ -96,3 +96,11 @@ describe("seedProjectRuntime", () => {
     seedProjectRuntime("testproj");
   });
 });
+
+describe("PROJECT_AGENTS", () => {
+  it("contains exactly head, re1, re2 with no dev", () => {
+    const { PROJECT_AGENTS } = loadRoutes();
+    assert.deepEqual(PROJECT_AGENTS, ["head", "re1", "re2"]);
+    assert.ok(!PROJECT_AGENTS.includes("dev"));
+  });
+});
