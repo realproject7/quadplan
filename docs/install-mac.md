@@ -153,24 +153,6 @@ cd /path/to/project-re2 && claude -p "echo ok"
 
 ---
 
-## Discord / Telegram Bridge (Optional)
-
-### Discord bridge
-
-1. Open the project page in the dashboard
-2. Click the **Discord** widget
-3. Enter your Discord bot token and channel ID
-4. Click **Start**
-
-### Telegram bridge
-
-1. Open the project page in the dashboard
-2. Click the **Telegram** widget
-3. Enter your Telegram bot token and chat ID
-4. Click **Start**
-
-> **Note:** Bridges are configured per-project in `~/.quadplan/config.json`. See the dashboard Telegram/Discord widgets for setup.
-
 ---
 
 ## Stopping & Restarting
