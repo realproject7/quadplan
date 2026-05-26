@@ -239,6 +239,49 @@ function writeOvernightQueueFileSafe(projectId, projectName, repo) {
   } catch { /* non-fatal */ }
 }
 
+/**
+ * Seed the QuadPlan project workspace layout inside the project's working directory.
+ * Creates artifact directories and a stub PROPOSAL.md. Idempotent: never overwrites
+ * existing files or directories.
+ */
+function seedProjectWorkspace(workingDir, projectName) {
+  if (!workingDir || !fs.existsSync(workingDir)) return [];
+  const seeded = [];
+  const dirs = [
+    path.join(workingDir, "docs"),
+    path.join(workingDir, "artifacts", "design"),
+    path.join(workingDir, "artifacts", "tickets"),
+    path.join(workingDir, "artifacts", "docs"),
+  ];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      seeded.push(path.relative(workingDir, dir));
+    }
+  }
+  const proposalPath = path.join(workingDir, "docs", "PROPOSAL.md");
+  if (!fs.existsSync(proposalPath)) {
+    fs.writeFileSync(proposalPath, `# ${projectName || "Project"} — Proposal\n\n> Replace this stub with the project proposal.\n`);
+    seeded.push("docs/PROPOSAL.md");
+  }
+  return seeded;
+}
+
+/**
+ * Ensure ~/.quadplan/{projectId}/ runtime directories exist.
+ * Creates chat/, history-snapshots/ if missing.
+ */
+function seedProjectRuntime(projectId) {
+  if (!projectId) return;
+  const runtimeDirs = [
+    path.join(CONFIG_DIR, projectId, "chat"),
+    path.join(CONFIG_DIR, projectId, "history-snapshots"),
+  ];
+  for (const dir of runtimeDirs) {
+    if (!fs.existsSync(dir)) ensureSecureDir(dir);
+  }
+}
+
 function getProjectMaxHops(projectId) {
   if (!projectId) return 30;
   const cfg = readConfigFile();
@@ -2153,6 +2196,8 @@ router.post("/api/setup", (req, res) => {
           }
         }
       }
+      const workspaceSeeded = seedProjectWorkspace(workingDir, body.projectName || dirName);
+      seeded.push(...workspaceSeeded.map((f) => `workspace/${f}`));
       return res.json({ ok: true, seeded });
     }
     case "add-config": {
@@ -2195,11 +2240,16 @@ router.post("/api/setup", (req, res) => {
       }
       cfg.projects.push({
         id, name, repo, working_dir: workingDir, agents,
+        proposal_path: path.join(workingDir, "docs", "PROPOSAL.md"),
+        queue_path: path.join(CONFIG_DIR, id, "OVERNIGHT-QUEUE.md"),
+        artifact_dir: path.join(workingDir, "artifacts"),
         chat_mode: "file",
       });
       const dir = path.dirname(CONFIG_PATH);
       ensureSecureDir(dir);
       writeConfig(cfg);
+
+      seedProjectRuntime(id);
 
       // Batch 25 / #204: seed the per-project OVERNIGHT-QUEUE.md at
       // ~/.quadplan/{id}/OVERNIGHT-QUEUE.md.
@@ -2749,3 +2799,5 @@ module.exports.normalizeMentions = normalizeMentions;
 module.exports.getProjectChatMode = getProjectChatMode;
 // #730: PTY dispatch callback setter
 module.exports.setPtyDispatchCallback = setPtyDispatchCallback;
+module.exports.seedProjectWorkspace = seedProjectWorkspace;
+module.exports.seedProjectRuntime = seedProjectRuntime;
