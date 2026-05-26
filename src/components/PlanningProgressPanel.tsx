@@ -81,9 +81,6 @@ function ProgressBar({ percent }: { percent: number }) {
 
 function artifactLink(artifact: ArtifactRow): string | null {
   if (artifact.output) return artifact.output;
-  if (artifact.id.startsWith("#")) {
-    return `https://github.com/${artifact.id}`;
-  }
   return null;
 }
 
