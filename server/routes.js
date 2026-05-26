@@ -13,6 +13,7 @@ const multer = require("multer");
 const fileChat = require("./file-chat");
 const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
+const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
 
 const router = express.Router();
 
@@ -1840,6 +1841,43 @@ router.get("/api/batch-active", (req, res) => {
     active = issueNumbers.length > 0;
   } catch {}
   return res.json({ active });
+});
+
+router.get("/api/planning-progress", (req, res) => {
+  const projectId = req.query.project;
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+
+  const queuePath = path.join(CONFIG_DIR, projectId, "OVERNIGHT-QUEUE.md");
+  let text = "";
+  try {
+    text = fs.readFileSync(queuePath, "utf-8");
+  } catch {
+    return res.json({
+      batchNumber: null,
+      batchTitle: null,
+      artifacts: [],
+      summary: { total: 0, done: 0, approved: 0, inReview: 0, drafting: 0, queued: 0, progress: 0 },
+    });
+  }
+
+  const { batchNumber, batchTitle, artifacts } = parsePlanningQueue(text);
+  const rows = artifacts.map((a) => {
+    const effective = resolveEffectiveStatus(a);
+    return {
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      status: effective,
+      statusLabel: statusToLabel(effective),
+      progress: statusToProgress(effective),
+      review: a.review,
+      source: a.source,
+      output: a.output,
+    };
+  });
+  const summary = summarizeBatch(artifacts);
+
+  return res.json({ batchNumber, batchTitle, artifacts: rows, summary });
 });
 
 router.get("/api/batch-progress", async (req, res) => {
