@@ -1972,13 +1972,14 @@ router.get("/api/planning-loop/status", (req, res) => {
   if (!info) {
     return res.json({ enabled: false, state: "paused", intervalMin: null, lastPulse: persistedLastPulse, nextPulse: null });
   }
+  const liveGuardPaused = fileChat.isLoopGuardPaused(projectId);
   return res.json({
     enabled: true,
-    state: info.guardPaused ? "guard_paused" : "running",
+    state: liveGuardPaused ? "guard_paused" : "running",
     intervalMin: info.intervalMin,
     lastPulse: info.lastPulse || persistedLastPulse,
     nextPulse: info.nextPulse,
-    guardPaused: !!info.guardPaused,
+    guardPaused: liveGuardPaused,
   });
 });
 
