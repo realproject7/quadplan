@@ -246,10 +246,10 @@ export default function GitHubPanel({ projectId }: GitHubPanelProps) {
           }
         </div>
       )}
-      {/* #226: side-by-side issues + PRs columns (stacked on mobile) */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-        {/* Issues column */}
-        <div className="flex-1 min-w-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border">
+      {/* Issues-first layout for QuadPlan planning workflow */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {/* Issues — primary section */}
+        <div className="flex-1 min-w-0 flex flex-col">
           <div className="px-3 py-1.5 border-b border-border shrink-0 flex items-center gap-1.5">
             <span className="text-[10px] text-text-muted uppercase tracking-wider">
               {t.issues(issues.length)}
@@ -304,17 +304,15 @@ export default function GitHubPanel({ projectId }: GitHubPanelProps) {
           </div>
         </div>
 
-        {/* PRs column */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <div className="px-3 py-1.5 border-b border-border shrink-0 flex items-center gap-1.5">
-            <span className="text-[10px] text-text-muted uppercase tracking-wider">
+        {/* PRs — secondary/collapsible section */}
+        {prs.length > 0 && (
+        <div className="shrink-0 border-t border-border">
+          <div className="px-3 py-1 border-b border-border/40 flex items-center gap-1.5">
+            <span className="text-[9px] text-text-muted uppercase tracking-wider">
               {t.prs(prs.length)}
             </span>
-            <InfoTooltip>
-              {t.prsHelp}
-            </InfoTooltip>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="max-h-32 overflow-y-auto">
             {prs.length === 0 && (
               <div className="px-3 py-2 text-[11px] text-text-muted">{t.noPrs}</div>
             )}
@@ -393,6 +391,7 @@ export default function GitHubPanel({ projectId }: GitHubPanelProps) {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* #413 / quadwork#282: Current Batch Progress section sits
