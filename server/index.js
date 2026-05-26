@@ -273,7 +273,7 @@ const PERMISSION_FLAGS = {
  * Returns the absolute path to the written JSON file.
  */
 /**
- * Per-agent registration tokens persisted across QuadWork restarts so
+ * Per-agent registration tokens persisted across QuadPlan restarts so
  * #242 stale-slot reclaim works after a crash. Without this the
  * in-memory _tokenCache is empty on startup and the family-name
  * deregister returns 403 (app.py:2123-2135).
@@ -1764,7 +1764,7 @@ function runStartupMigrations(cfg) {
       if (!p.working_dir) continue;
       const dirName = path.basename(p.working_dir);
       const parentDir = path.dirname(p.working_dir);
-      for (const agent of ["head", "dev", "re1", "re2"]) {
+      for (const agent of ["head", "re1", "re2"]) {
         const wtDir = path.join(parentDir, `${dirName}-${agent}`);
         const dst = path.join(wtDir, "DESIGN-GUIDE.md");
         if (fs.existsSync(wtDir) && !fs.existsSync(dst)) {
@@ -1780,7 +1780,7 @@ function runStartupMigrations(cfg) {
 }
 
 server.listen(PORT, "127.0.0.1", async () => {
-  console.log(`QuadWork server listening on http://127.0.0.1:${PORT}`);
+  console.log(`QuadPlan server listening on http://127.0.0.1:${PORT}`);
   syncTriggersFromConfig();
   const startupCfg = readConfig();
 
