@@ -15,7 +15,7 @@ const DEFAULT_PRESETS: Preset[] = [
     id: "default-1",
     title: "Queue Check — Trigger",
     message: `@head @dev @re1 @re2 – Queue check.
-@head: Merge any PR with both approvals, assign next from ~/.quadwork/{{project}}/OVERNIGHT-QUEUE.md.
+@head: Merge any PR with both approvals, assign next from ~/.quadplan/{{project}}/OVERNIGHT-QUEUE.md.
 @dev: Work on assigned ticket or address review feedback.
 @re1 & @re2: Review open PRs. If @dev pushed fixes, re-review. Post verdict on PR AND notify @dev here.
 ALL: Communicate via this chat by tagging agents. Your terminal is NOT visible.`,
