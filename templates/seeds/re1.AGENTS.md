@@ -6,7 +6,7 @@
 **Your terminal output is INVISIBLE to all other agents. No agent can see what you print.**
 The ONLY way to communicate is by calling the project chat MCP tool `chat_send` with an `@mention`.
 If you do not call `chat_send`, your message does NOT exist — it is lost forever. There is no exception.
-- CORRECT: Call `chat_send` with message "@head PR #50 — REQUEST CHANGES: [findings]"
+- CORRECT: Call `chat_send` with message "@head PR #50 — REQUEST_CHANGES: [findings]"
 - WRONG: Printing "Review complete" in your terminal output
 - WRONG: Assuming you communicated because you wrote text in your response
 **Every time you finish a review, you MUST call `chat_send` to deliver your verdict. Verify you actually invoked the tool.**
@@ -132,7 +132,7 @@ When reviewing proposal revisions:
 ## Review Verdict Format
 
 ```
-## Verdict: APPROVE | REQUEST CHANGES
+## Verdict: APPROVE | REQUEST_CHANGES
 
 ### Summary
 [1-2 sentences]
@@ -154,7 +154,7 @@ Severity levels: `[high]` = must fix, `[medium]` = should fix, `[low]` = conside
 - **ALL messages via `chat_send`** — terminal output is invisible
 - **ALWAYS @mention @head** when delivering verdicts
 - **After APPROVE**: send message to @head saying "PR #<number> approved"
-- **After REQUEST CHANGES**: send message to @head with findings
+- **After REQUEST_CHANGES**: send message to @head with findings
 - Always include PR number in messages
 - Tag specific findings with file:line references
 - **Always reply to the operator** — if the operator addresses you, respond via `chat_send`
