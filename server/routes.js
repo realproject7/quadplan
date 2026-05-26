@@ -1148,10 +1148,10 @@ async function refreshGraphQLCache() {
 
 // Start background GraphQL polling alongside rate-limit polling.
 let _graphqlPollTimer = null;
+let _graphqlInitTimer = null;
 function startGraphQLPolling() {
   if (_graphqlPollTimer) return;
-  // Initial fetch after a short delay (let rate-limit poll run first).
-  setTimeout(() => refreshGraphQLCache(), 2000);
+  _graphqlInitTimer = setTimeout(() => refreshGraphQLCache(), 2000);
   _graphqlPollTimer = setInterval(refreshGraphQLCache, GRAPHQL_CACHE_TTL);
 }
 
@@ -3041,5 +3041,6 @@ module.exports._testCleanup = function () {
   _planningLoopTimers.clear();
   _planningLoopLastPulse.clear();
   if (_rateLimitTimer) { clearInterval(_rateLimitTimer); _rateLimitTimer = null; }
+  if (_graphqlInitTimer) { clearTimeout(_graphqlInitTimer); _graphqlInitTimer = null; }
   if (_graphqlPollTimer) { clearInterval(_graphqlPollTimer); _graphqlPollTimer = null; }
 };

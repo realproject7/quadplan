@@ -14,6 +14,7 @@ before(() => {
 });
 
 after(() => {
+  try { require("./routes")._testCleanup(); } catch {}
   os.homedir = origHomedir;
   fs.rmSync(TEST_DIR, { recursive: true, force: true });
 });
