@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0a0a0a;
+  --bg-surface: #111111;
+  --text: #e0e0e0;
+  --text-muted: #737373;
+  --accent: #00ff88;
+  --accent-dim: #00cc6a;
+  --border: #2a2a2a;
+  --error: #ff4444;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-surface: var(--bg-surface);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-border: var(--border);
+  --color-error: var(--error);
+  --font-mono: var(--font-geist-mono);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, "SF Mono",
+    Menlo, Consolas, "Liberation Mono", monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  letter-spacing: -0.01em;
+}
+
+/* Scrollbar — utilitarian, minimal chrome */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Focus ring — accent green, sharp */
+*:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Typewriter cursor blink (#206 — TopHeader tagline) */
+@keyframes qw-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.animate-qw-blink {
+  animation: qw-blink 1s steps(2, start) infinite;
+}
+
+/* #421 / quadwork#305: activity-indicator text shimmer.
+   Color-only (no text-shadow, no background, no filter) so the
+   shimmer matches the "minimal aesthetic" constraint in the
+   ticket. Pulses between the accent green and a desaturated
+   mid-point so the active agent label stands out against the
+   muted sibling labels without being garish. */
+@keyframes qw-name-shimmer {
+  0%, 100% { color: var(--accent); }
+  50% { color: color-mix(in srgb, var(--accent) 55%, #e0e0e0); }
+}
+.animate-name-shimmer {
+  animation: qw-name-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes qw-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(0, 255, 136, 0); }
+}
+.animate-pulse-ring {
+  animation: qw-pulse 2s ease-in-out infinite;
+  will-change: box-shadow;
+}
+
+/* Korean help text should wrap by word, not by individual syllable.
+   Keep long URLs/tokens from overflowing narrow tooltips and modals. */
+.ko-help {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.ko-help p,
+.ko-help li,
+.ko-help div,
+.ko-help span,
+.ko-help b,
+.ko-help strong {
+  word-break: inherit;
+  overflow-wrap: inherit;
+  line-break: inherit;
+}
+
+.ko-help code,
+.ko-help pre,
+.ko-help .break-anywhere {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}

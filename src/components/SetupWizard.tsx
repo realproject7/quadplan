@@ -1,0 +1,1098 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useLocale } from "@/components/LocaleProvider";
+
+/* ── Types ─────────────────────────────────────────────────────────────── */
+
+type StepStatus = "pending" | "active" | "done" | "error" | "skipped";
+
+interface Step {
+  id: string;
+  label: string;
+  subtitle: string;
+  status: StepStatus;
+  error?: string;
+}
+
+interface Repo {
+  name: string;
+  description?: string;
+  isPrivate?: boolean;
+}
+
+/* ── Constants ─────────────────────────────────────────────────────────── */
+
+const COPY = {
+  en: {
+    title: "Set Up Your AI Dev Team",
+    subtitle: "Configure agents, connect your repo, and launch a multi-agent development workflow in minutes.",
+    steps: {
+      name: { label: "Project Name", subtitle: "Name your project" },
+      repo: { label: "GitHub Repo", subtitle: "Connect a repository" },
+      models: { label: "Agent Models", subtitle: "Configure CLI backends" },
+      workdir: { label: "Working Directory", subtitle: "Set the local path" },
+      workspaces: { label: "Create Workspaces", subtitle: "Worktrees + seed files" },
+      launch: { label: "Ready to Launch", subtitle: "Review & start" },
+    },
+    workdir: {
+      title: "Where is your project?",
+      desc: "Your project's git repository on your local machine. QuadWork will create 4 agent workspaces next to this directory.",
+      scanning: "Scanning for existing clone...",
+      found: "Found existing clone",
+      useThis: "Use this",
+      chooseDifferent: "Choose different path",
+      noClone: (repo: string) => <>No local clone found for <span className="text-accent">{repo}</span></>,
+      setupWillClone: "Setup will clone it to:",
+      cloneHere: "Clone here & continue",
+      next: "Next",
+      layout: "Workspace layout",
+    },
+    nameStep: {
+      title: "Name your project",
+      desc: "This name identifies your project in the dashboard and agent configs.",
+      placeholder: "e.g. My DeFi App",
+      next: "Next",
+    },
+    repoStep: {
+      title: "Connect a GitHub repository",
+      desc: "Select an existing repo or enter one manually. Agents will work within this repo.",
+      showingRepos: (owner: string) => <>Showing repos for <span className="text-accent">{owner}</span></>,
+      searchPlaceholder: "Search repos...",
+      loading: "Loading...",
+      noRepos: "No repos found.",
+      enterManually: "Enter manually instead",
+      backToList: "Back to repo list",
+      private: "private",
+      enableProtection: (repo: string) => <>Enable branch protection on <code className="text-accent">main</code></>,
+      protectionDesc: "Run this after setup, or configure in GitHub UI:",
+      copy: "copy",
+      verifying: "Verifying...",
+      verify: "Verify & Continue",
+    },
+    modelsStep: {
+      title: "Configure agent CLI backends",
+      desc: "Each agent runs its own CLI instance. Pick the backend for each role.",
+      next: "Next",
+    },
+    workspacesStep: {
+      title: "Create workspaces",
+      desc: "This creates git worktrees for each agent and writes seed configuration files (AGENTS.md, CLAUDE.md) into each workspace.",
+      creating: "Creating...",
+      create: "Create Worktrees & Seed Files",
+    },
+    launchStep: {
+      title: "Ready to launch",
+      desc: "Everything is configured. Review the summary and launch your AI dev team.",
+      teamRoster: "Team Roster",
+      redirecting: "Project saved. Redirecting to dashboard...",
+      launching: "Launching...",
+      launched: "Launched!",
+      launch: "Launch Project",
+    },
+    preview: {
+      title: "Configuration Preview",
+      project: "Project",
+      repo: "Repository",
+      branchProtection: "+ branch protection",
+      backends: "Backends",
+      reviewer: "Reviewer",
+      directory: "Directory",
+      status: "Status",
+    },
+    setupComplete: "Setup complete!",
+    redirectingToDashboard: "Redirecting to project dashboard...",
+  },
+  ko: {
+    title: "AI 개발 팀 설정하기",
+    subtitle: "에이전트를 설정하고, 저장소를 연결하고, 몇 분 안에 멀티 에이전트 개발 워크플로우를 시작하세요.",
+    steps: {
+      name: { label: "프로젝트 이름", subtitle: "프로젝트 이름 정하기" },
+      repo: { label: "GitHub 저장소", subtitle: "저장소 연결하기" },
+      models: { label: "에이전트 모델", subtitle: "CLI 백엔드 구성" },
+      workdir: { label: "작업 디렉터리", subtitle: "로컬 경로 지정" },
+      workspaces: { label: "워크스페이스 생성", subtitle: "워크트리 + 초기 파일" },
+      launch: { label: "실행 준비", subtitle: "검토 후 시작" },
+    },
+    workdir: {
+      title: "프로젝트 위치는 어디인가요?",
+      desc: "로컬 머신에 있는 프로젝트의 Git 저장소 경로입니다. QuadWork는 이 디렉터리 옆에 4개의 에이전트 워크스페이스를 생성합니다.",
+      scanning: "기존 클론을 찾는 중...",
+      found: "기존 클론을 찾았습니다",
+      useThis: "이 경로 사용",
+      chooseDifferent: "다른 경로 선택",
+      noClone: (repo: string) => <><span className="text-accent">{repo}</span> 의 로컬 클론을 찾지 못했습니다</>,
+      setupWillClone: "설치 시 다음 경로로 클론합니다:",
+      cloneHere: "여기에 클론하고 계속",
+      next: "다음",
+      layout: "워크스페이스 구조",
+    },
+    nameStep: {
+      title: "프로젝트 이름 정하기",
+      desc: "이 이름은 대시보드와 에이전트 설정에서 프로젝트를 식별하는 데 사용됩니다.",
+      placeholder: "예: 내 DeFi 앱",
+      next: "다음",
+    },
+    repoStep: {
+      title: "GitHub 저장소 연결",
+      desc: "기존 저장소를 선택하거나 직접 입력하세요. 에이전트는 이 저장소 안에서 작업합니다.",
+      showingRepos: (owner: string) => <><span className="text-accent">{owner}</span> 의 저장소를 표시하는 중</>,
+      searchPlaceholder: "저장소 검색...",
+      loading: "로딩 중...",
+      noRepos: "저장소를 찾지 못했습니다.",
+      enterManually: "직접 입력하기",
+      backToList: "저장소 목록으로 돌아가기",
+      private: "비공개",
+      enableProtection: (repo: string) => <> <code className="text-accent">main</code> 브랜치 보호 사용</>,
+      protectionDesc: "설치 후 이 명령을 실행하거나 GitHub UI에서 직접 설정하세요:",
+      copy: "복사",
+      verifying: "확인 중...",
+      verify: "확인 후 계속",
+    },
+    modelsStep: {
+      title: "에이전트 CLI 백엔드 구성",
+      desc: "각 에이전트는 자체 CLI 인스턴스를 사용합니다. 역할별로 백엔드를 선택하세요.",
+      next: "다음",
+    },
+    workspacesStep: {
+      title: "워크스페이스 생성",
+      desc: "각 에이전트용 Git 워크트리를 만들고 각 워크스페이스에 초기 설정 파일(AGENTS.md, CLAUDE.md)을 작성합니다.",
+      creating: "생성 중...",
+      create: "워크트리 및 초기 파일 생성",
+    },
+    launchStep: {
+      title: "실행 준비 완료",
+      desc: "모든 설정이 끝났습니다. 요약을 확인하고 AI 개발 팀을 시작하세요.",
+      teamRoster: "팀 구성",
+      redirecting: "프로젝트를 저장했습니다. 대시보드로 이동 중...",
+      launching: "실행 중...",
+      launched: "실행됨!",
+      launch: "프로젝트 실행",
+    },
+    preview: {
+      title: "설정 미리보기",
+      project: "프로젝트",
+      repo: "저장소",
+      branchProtection: "+ 브랜치 보호",
+      backends: "백엔드",
+      reviewer: "리뷰어",
+      directory: "디렉터리",
+      status: "상태",
+    },
+    setupComplete: "설정 완료!",
+    redirectingToDashboard: "프로젝트 대시보드로 이동 중...",
+  },
+} as const;
+
+const BACKENDS: { value: string; label: string }[] = [
+  { value: "claude", label: "Claude Code" },
+  { value: "codex", label: "Codex" },
+];
+
+const AGENTS = [
+  { key: "head", label: "Head", role: "Owner / Final Guard", desc: "Merges PRs, makes final calls" },
+  { key: "re1", label: "RE1", role: "Design Reviewer", desc: "Reviews architecture & design" },
+  { key: "re2", label: "RE2", role: "Code Reviewer", desc: "Reviews implementation quality" },
+  { key: "dev", label: "Dev", role: "Full-Stack Builder", desc: "Implements features & fixes" },
+];
+
+/* ── Component ─────────────────────────────────────────────────────────── */
+
+function WorkdirStep({ repo, workingDir, setWorkingDir, error, onNext }: {
+  repo: string; workingDir: string; setWorkingDir: (v: string) => void; error?: string; onNext: () => void;
+}) {
+  const { locale } = useLocale();
+  const t = COPY[locale].workdir;
+  const [detecting, setDetecting] = useState(true);
+  const [detected, setDetected] = useState<{ found: boolean; path: string | null; suggested: string } | null>(null);
+  const [showManual, setShowManual] = useState(false);
+  const slug = repo ? repo.split("/")[1] : "project";
+
+  useEffect(() => {
+    if (!repo) { setDetecting(false); return; }
+    fetch(`/api/setup/detect-clone?repo=${encodeURIComponent(repo)}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        setDetected(data);
+        if (data?.found && data.path) setWorkingDir(data.path);
+        else if (data?.suggested) setWorkingDir(data.suggested);
+        setDetecting(false);
+      })
+      .catch(() => setDetecting(false));
+  }, [repo, setWorkingDir]);
+
+  return (
+    <div>
+      <h2 className="text-sm font-semibold text-text mb-1">{t.title}</h2>
+      <p className="text-[11px] text-text-muted mb-3">
+        {t.desc}
+      </p>
+
+      {detecting && <p className="text-[11px] text-text-muted mb-3">{t.scanning}</p>}
+
+      {!detecting && detected?.found && (
+        <div className="border border-accent/30 bg-accent/5 p-3 mb-4 text-[11px]">
+          <p className="text-accent font-semibold mb-1">{t.found}</p>
+          <p className="text-text font-mono">{detected.path}</p>
+          <div className="flex gap-2 mt-2">
+            <button onClick={onNext} className="px-3 py-1 bg-accent text-bg text-[11px] font-semibold hover:bg-accent-dim transition-colors">
+              {t.useThis}
+            </button>
+            <button onClick={() => { setShowManual(true); setWorkingDir(""); }} className="px-3 py-1 text-[11px] text-text-muted border border-border hover:text-text transition-colors">
+              {t.chooseDifferent}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!detecting && !detected?.found && !showManual && (
+        <div className="border border-border bg-bg-surface p-3 mb-4 text-[11px]">
+          <p className="text-text-muted mb-1">{t.noClone(repo)}</p>
+          <p className="text-text-muted mb-2">{t.setupWillClone}</p>
+          <p className="text-text font-mono mb-2">{detected?.suggested || `~/Projects/${slug}`}</p>
+          <div className="flex gap-2">
+            <button onClick={onNext} disabled={!workingDir.trim()} className="px-3 py-1 bg-accent text-bg text-[11px] font-semibold hover:bg-accent-dim transition-colors disabled:opacity-50">
+              {t.cloneHere}
+            </button>
+            <button onClick={() => setShowManual(true)} className="px-3 py-1 text-[11px] text-text-muted border border-border hover:text-text transition-colors">
+              {t.chooseDifferent}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(showManual || (!detecting && !detected)) && (
+        <>
+          <input
+            value={workingDir}
+            onChange={(e) => setWorkingDir(e.target.value)}
+            placeholder={`~/Projects/${slug}`}
+            className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent mb-2"
+          />
+          <button onClick={onNext} disabled={!workingDir.trim()} className="px-4 py-1.5 bg-accent text-bg text-[12px] font-semibold hover:bg-accent-dim transition-colors disabled:opacity-50">
+            {t.next}
+          </button>
+        </>
+      )}
+
+      {error && <p className="text-[11px] text-error mt-2">{error}</p>}
+
+      <div className="border border-border bg-bg-surface p-3 mt-4 text-[11px] text-text-muted font-mono space-y-0.5">
+        <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-sans">{t.layout}</p>
+        <p className="text-accent">{slug}/              &larr; your repo</p>
+        <p>{slug}-head/         &larr; Head agent</p>
+        <p>{slug}-dev/          &larr; Dev agent</p>
+        <p>{slug}-re1/          &larr; RE1</p>
+        <p>{slug}-re2/          &larr; RE2</p>
+      </div>
+    </div>
+  );
+}
+
+export default function SetupWizard() {
+  const router = useRouter();
+  const { locale, hydrated } = useLocale();
+  const t = COPY[locale];
+  const [steps, setSteps] = useState<Step[]>(() => [
+    { id: "name", label: t.steps.name.label, subtitle: t.steps.name.subtitle, status: "active" },
+    { id: "repo", label: t.steps.repo.label, subtitle: t.steps.repo.subtitle, status: "pending" },
+    { id: "models", label: t.steps.models.label, subtitle: t.steps.models.subtitle, status: "pending" },
+    { id: "workdir", label: t.steps.workdir.label, subtitle: t.steps.workdir.subtitle, status: "pending" },
+    { id: "workspaces", label: t.steps.workspaces.label, subtitle: t.steps.workspaces.subtitle, status: "pending" },
+    { id: "launch", label: t.steps.launch.label, subtitle: t.steps.launch.subtitle, status: "pending" },
+  ]);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // Form state
+  const [projectName, setProjectName] = useState("");
+  const [repo, setRepo] = useState("");
+  const [repoSearch, setRepoSearch] = useState("");
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
+  const [repoManual, setRepoManual] = useState(false);
+  const [ghUser, setGhUser] = useState("");
+  const [orgs, setOrgs] = useState<string[]>([]);
+  const [ownerMode, setOwnerMode] = useState<"personal" | "organization">("personal");
+  const [selectedOrg, setSelectedOrg] = useState("");
+  const [enableProtection, setEnableProtection] = useState(false);
+  const [backends, setBackends] = useState<Record<string, string>>({
+    head: "claude", re1: "claude", re2: "claude", dev: "claude",
+  });
+  const [autoApprove, setAutoApprove] = useState(true);
+  const [showReviewerCreds, setShowReviewerCreds] = useState(false);
+  const [reviewerUser, setReviewerUser] = useState("");
+  const [reviewerTokenMode, setReviewerTokenMode] = useState<"paste" | "file">("paste");
+  const [reviewerTokenValue, setReviewerTokenValue] = useState("");
+  const [reviewerTokenPath, setReviewerTokenPath] = useState("~/.quadwork/reviewer-token");
+  const [workingDir, setWorkingDir] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [workspaceLog, setWorkspaceLog] = useState<string[]>([]);
+  const [launchStatus, setLaunchStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [cliStatus, setCliStatus] = useState<{ claude: boolean; codex: boolean } | null>(null);
+
+  useEffect(() => {
+    setSteps((prev) => [
+      { id: "name", label: t.steps.name.label, subtitle: t.steps.name.subtitle, status: prev[0].status, error: prev[0].error },
+      { id: "repo", label: t.steps.repo.label, subtitle: t.steps.repo.subtitle, status: prev[1].status, error: prev[1].error },
+      { id: "models", label: t.steps.models.label, subtitle: t.steps.models.subtitle, status: prev[2].status, error: prev[2].error },
+      { id: "workdir", label: t.steps.workdir.label, subtitle: t.steps.workdir.subtitle, status: prev[3].status, error: prev[3].error },
+      { id: "workspaces", label: t.steps.workspaces.label, subtitle: t.steps.workspaces.subtitle, status: prev[4].status, error: prev[4].error },
+      { id: "launch", label: t.steps.launch.label, subtitle: t.steps.launch.subtitle, status: prev[5].status, error: prev[5].error },
+    ]);
+  }, [t]);
+
+  // Fetch CLI status on mount
+  useEffect(() => {
+    fetch("/api/cli-status")
+      .then((r) => r.json())
+      .then((status: { claude: boolean; codex: boolean }) => {
+        setCliStatus(status);
+        // Default all agents to the available CLI when only one is installed
+        const availableCli = status.claude && !status.codex ? "claude"
+          : !status.claude && status.codex ? "codex"
+          : null;
+        if (availableCli) {
+          setBackends({ head: availableCli, re1: availableCli, re2: availableCli, dev: availableCli });
+        } else if (status.claude && status.codex) {
+          // Both available — use mixed defaults for review diversity
+          setBackends({ head: "codex", dev: "claude", re1: "codex", re2: "claude" });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Fetch GitHub user + orgs on mount
+  useEffect(() => {
+    fetch("/api/github/user")
+      .then((r) => r.json())
+      .then((d) => { if (d.login) setGhUser(d.login); })
+      .catch(() => {});
+    fetch("/api/github/orgs")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setOrgs(d); })
+      .catch(() => {});
+  }, []);
+
+  // Resolve the owner whose repos we list (personal login, or selected org).
+  const activeOwner = ownerMode === "organization" ? selectedOrg : ghUser;
+
+  // Fetch repos when the active owner changes
+  useEffect(() => {
+    if (!activeOwner) { setRepos([]); return; }
+    setReposLoading(true);
+    fetch(`/api/github/repos?owner=${encodeURIComponent(activeOwner)}`)
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setRepos(d); else setRepos([]); })
+      .catch(() => setRepos([]))
+      .finally(() => setReposLoading(false));
+  }, [activeOwner]);
+
+  const updateStep = useCallback((idx: number, updates: Partial<Step>) => {
+    setSteps((prev) => prev.map((s, i) => (i === idx ? { ...s, ...updates } : s)));
+  }, []);
+
+  // #472: track the furthest step reached so back-navigation can
+  // skip already-completed steps when proceeding forward again.
+  const [furthestStep, setFurthestStep] = useState(0);
+
+  const goNext = useCallback(() => {
+    // #472: if we're behind the furthest step (editing a past step),
+    // skip forward to where the operator left off instead of walking
+    // through already-completed intermediate steps one by one.
+    const target = currentStep < furthestStep ? furthestStep : currentStep + 1;
+
+    setSteps((prev) => prev.map((s, i) => {
+      if (i === currentStep) return { ...s, status: "done" as StepStatus };
+      if (i === target) return { ...s, status: "active" as StepStatus };
+      return s;
+    }));
+    setCurrentStep(target);
+    setFurthestStep((f) => Math.max(f, target));
+  }, [currentStep, furthestStep]);
+
+  // #472: navigate back to a completed step for editing. The
+  // previously-active step becomes "done" (values preserved in
+  // state) and the target step becomes "active" again.
+  const goToStep = useCallback((targetIdx: number) => {
+    setSteps((prev) => prev.map((s, i) => {
+      if (i === targetIdx) return { ...s, status: "active" as StepStatus };
+      // #480: Only keep "done" if the step was already completed.
+      // In-progress/active steps revert to "pending" on back-navigation.
+      if (i === currentStep) {
+        return s.status === "done"
+          ? s
+          : { ...s, status: "pending" as StepStatus };
+      }
+      return s;
+    }));
+    setCurrentStep(targetIdx);
+  }, [currentStep]);
+
+  const apiCall = async (step: string, body: Record<string, unknown>) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/setup?step=${step}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      setLoading(false);
+      return data;
+    } catch {
+      setLoading(false);
+      return { ok: false, error: "Request failed" };
+    }
+  };
+
+  // Step: verify repo
+  const verifyRepo = async () => {
+    const result = await apiCall("verify-repo", { repo });
+    if (result.ok) {
+      goNext();
+    } else {
+      updateStep(currentStep, { status: "error", error: result.error });
+    }
+  };
+
+  // Step: create workspaces (worktrees + seed files in sequence)
+  const createWorkspaces = async () => {
+    setLoading(true);
+    setWorkspaceLog([]);
+
+    // Save reviewer token first if pasted
+    if (showReviewerCreds && reviewerTokenMode === "paste" && reviewerTokenValue) {
+      setWorkspaceLog((l) => [...l, "Saving reviewer token..."]);
+      try {
+        const tokenRes = await fetch("/api/setup/save-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: reviewerTokenValue }),
+        });
+        const tokenData = await tokenRes.json();
+        if (tokenData.ok) {
+          setWorkspaceLog((l) => [...l, `Token saved to ${tokenData.path}`]);
+        }
+      } catch {}
+    }
+
+    // 1. Create worktrees
+    setWorkspaceLog((l) => [...l, "Creating worktrees..."]);
+    const wtResult = await apiCall("create-worktrees", { workingDir, repo, backends });
+    if (!wtResult.ok) {
+      setWorkspaceLog((l) => [...l, `Error: ${wtResult.errors?.join(", ") || wtResult.error}`]);
+      updateStep(currentStep, { status: "error", error: wtResult.errors?.join(", ") || wtResult.error });
+      setLoading(false);
+      return;
+    }
+    setWorkspaceLog((l) => [...l, "Worktrees created."]);
+
+    // 2. Seed files
+    setWorkspaceLog((l) => [...l, "Writing seed files..."]);
+    const effectiveTokenPath = showReviewerCreds
+      ? (reviewerTokenMode === "file" ? reviewerTokenPath : "~/.quadwork/reviewer-token")
+      : "";
+    const seedResult = await apiCall("seed-files", {
+      workingDir,
+      projectName,
+      repo,
+      reviewerUser: showReviewerCreds ? reviewerUser : "",
+      reviewerTokenPath: effectiveTokenPath,
+    });
+    if (!seedResult.ok) {
+      setWorkspaceLog((l) => [...l, `Error: ${seedResult.error}`]);
+      updateStep(currentStep, { status: "error", error: seedResult.error });
+      setLoading(false);
+      return;
+    }
+    setWorkspaceLog((l) => [...l, "Seed files written."]);
+    setWorkspaceLog((l) => [...l, "Done."]);
+    setLoading(false);
+    goNext();
+  };
+
+  // Step: launch (add-config + redirect)
+  const launchProject = async () => {
+    setLaunchStatus("running");
+
+    // Save config
+    const id = workingDir.split("/").pop() || projectName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const configResult = await apiCall("add-config", {
+      id, name: projectName, repo, workingDir, backends, auto_approve: autoApprove,
+      chat_mode: "file",
+    });
+
+    if (configResult.ok) {
+      setLaunchStatus("done");
+      updateStep(currentStep, { status: "done" });
+      setTimeout(() => router.push(`/project/${id}`), 1200);
+    } else {
+      setLaunchStatus("error");
+      updateStep(currentStep, { status: "error", error: configResult.error });
+    }
+  };
+
+  const filteredRepos = repos.filter((r) =>
+    r.name.toLowerCase().includes(repoSearch.toLowerCase())
+  );
+
+  const step = steps[currentStep];
+
+  if (!hydrated) {
+    return <div className="h-full overflow-y-auto" />;
+  }
+
+  /* ── Render ────────────────────────────────────────────────────────────── */
+
+  return (
+    <div className="h-full overflow-y-auto">
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 border-b border-border">
+        <h1 className="text-lg font-semibold text-text tracking-tight">
+          {t.title}
+        </h1>
+        <p className="text-[11px] text-text-muted mt-1">
+          {t.subtitle}
+        </p>
+      </div>
+
+      <div className="flex h-[calc(100%-80px)]">
+        {/* Left: Steps + Content */}
+        <div className="flex-1 flex gap-6 p-6 overflow-y-auto">
+          {/* Step sidebar */}
+          <div className="w-44 shrink-0">
+            {steps.map((s, i) => {
+              const isClickable = s.status === "done";
+              return (
+                <div
+                  key={s.id}
+                  className={`flex items-start gap-2 py-2 ${isClickable ? "cursor-pointer group" : ""}`}
+                  onClick={isClickable ? () => goToStep(i) : undefined}
+                  role={isClickable ? "button" : undefined}
+                  tabIndex={isClickable ? 0 : undefined}
+                  onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") goToStep(i); } : undefined}
+                >
+                  <span className={`w-5 h-5 flex items-center justify-center text-[10px] border shrink-0 mt-0.5 ${
+                    s.status === "done" ? "border-accent text-accent" :
+                    s.status === "error" ? "border-error text-error" :
+                    s.status === "active" ? "border-accent text-accent bg-accent/10" :
+                    s.status === "skipped" ? "border-border text-text-muted line-through" :
+                    "border-border text-text-muted"
+                  }`}>
+                    {s.status === "done" ? "\u2713" : s.status === "error" ? "!" : i + 1}
+                  </span>
+                  <div>
+                    <span className={`text-[11px] block leading-tight ${
+                      s.status === "active" ? "text-text font-semibold" :
+                      s.status === "done" ? "text-accent group-hover:text-text" :
+                      "text-text-muted"
+                    }`}>
+                      {s.label}
+                    </span>
+                    <span className="text-[10px] text-text-muted block">{s.subtitle}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Step content */}
+          <div className="flex-1 border border-border p-5 min-h-0">
+            {/* Step 1: Project Name */}
+            {step?.id === "name" && (
+              <div>
+                <h2 className="text-sm font-semibold text-text mb-1">{t.nameStep.title}</h2>
+                <p className="text-[11px] text-text-muted mb-4">
+                  {t.nameStep.desc}
+                </p>
+                <input
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder={t.nameStep.placeholder}
+                  className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent mb-4"
+                  autoFocus
+                />
+                <button
+                  onClick={goNext}
+                  disabled={!projectName.trim()}
+                  className="px-4 py-1.5 bg-accent text-bg text-[12px] font-semibold hover:bg-accent-dim transition-colors disabled:opacity-50"
+                >
+                  {t.nameStep.next || "Next"}
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: GitHub Repo */}
+            {step?.id === "repo" && (
+              <div>
+                <h2 className="text-sm font-semibold text-text mb-1">{t.repoStep.title}</h2>
+                <p className="text-[11px] text-text-muted mb-4">
+                  {t.repoStep.desc}
+                </p>
+
+                {!repoManual && (
+                  <>
+                    {orgs.length > 0 && (
+                      <div className="flex items-center gap-4 mb-2">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="ownerMode"
+                            checked={ownerMode === "personal"}
+                            onChange={() => setOwnerMode("personal")}
+                            className="accent-accent"
+                          />
+                          <span className="text-[11px] text-text">Personal</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="ownerMode"
+                            checked={ownerMode === "organization"}
+                            onChange={() => {
+                              setOwnerMode("organization");
+                              if (!selectedOrg && orgs[0]) setSelectedOrg(orgs[0]);
+                            }}
+                            className="accent-accent"
+                          />
+                          <span className="text-[11px] text-text">Organization</span>
+                        </label>
+                        {ownerMode === "organization" && (
+                          <select
+                            value={selectedOrg}
+                            onChange={(e) => setSelectedOrg(e.target.value)}
+                            className="bg-transparent border border-border px-2 py-0.5 text-[11px] text-text outline-none focus:border-accent cursor-pointer ml-auto"
+                          >
+                            {orgs.map((o) => (
+                              <option key={o} value={o} className="bg-bg-surface">{o}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    )}
+                    {activeOwner && (
+                      <p className="text-[11px] text-text-muted mb-2">
+                        {t.repoStep.showingRepos(activeOwner)}
+                      </p>
+                    )}
+                    <input
+                      value={repoSearch}
+                      onChange={(e) => setRepoSearch(e.target.value)}
+                      placeholder={t.repoStep.searchPlaceholder}
+                      className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent mb-2"
+                    />
+                    {reposLoading && <p className="text-[11px] text-text-muted mb-2">{t.repoStep.loading}</p>}
+                    <div className="max-h-40 overflow-y-auto border border-border mb-3">
+                      {filteredRepos.map((r) => (
+                        <button
+                          key={r.name}
+                          onClick={() => setRepo(`${activeOwner}/${r.name}`)}
+                          className={`w-full text-left px-3 py-1.5 text-[11px] border-b border-border/50 last:border-b-0 hover:bg-accent/5 transition-colors ${
+                            repo === `${activeOwner}/${r.name}` ? "bg-accent/10 text-accent" : "text-text"
+                          }`}
+                        >
+                          <span className="font-semibold">{r.name}</span>
+                          {r.isPrivate && <span className="text-[10px] text-text-muted ml-2">{t.repoStep.private}</span>}
+                          {r.description && <span className="text-[10px] text-text-muted ml-2">{r.description}</span>}
+                        </button>
+                      ))}
+                      {!reposLoading && filteredRepos.length === 0 && (
+                        <p className="px-3 py-2 text-[11px] text-text-muted">{t.repoStep.noRepos}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setRepoManual(true)}
+                      className="text-[11px] text-text-muted hover:text-accent transition-colors mb-3 block"
+                    >
+                      {t.repoStep.enterManually}
+                    </button>
+                  </>
+                )}
+
+                {repoManual && (
+                  <>
+                    <input
+                      value={repo}
+                      onChange={(e) => setRepo(e.target.value)}
+                      placeholder="owner/repo"
+                      className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent mb-2"
+                    />
+                    <button
+                      onClick={() => setRepoManual(false)}
+                      className="text-[11px] text-text-muted hover:text-accent transition-colors mb-3 block"
+                    >
+                      {t.repoStep.backToList}
+                    </button>
+                  </>
+                )}
+
+                {/* Branch protection toggle */}
+                <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enableProtection}
+                    onChange={(e) => setEnableProtection(e.target.checked)}
+                    className="accent-accent"
+                  />
+                  <span className="text-[11px] text-text-muted">
+                    {t.repoStep.enableProtection(repo || "owner/repo")}
+                  </span>
+                </label>
+
+                {enableProtection && (
+                  <div className="border border-border bg-bg-surface p-3 mb-4 text-[11px] space-y-2">
+                    <p className="text-text-muted">{t.repoStep.protectionDesc}</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-accent flex-1 select-all text-[10px] break-all">
+                        {`gh api repos/${repo || "owner/repo"}/branches/main/protection -X PUT -f "required_pull_request_reviews[required_approving_review_count]=1" -f "enforce_admins=false" -f "required_status_checks=null" -f "restrictions=null"`}
+                      </code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(`gh api repos/${repo}/branches/main/protection -X PUT -f "required_pull_request_reviews[required_approving_review_count]=1" -f "enforce_admins=false" -f "required_status_checks=null" -f "restrictions=null"`)}
+                        className="text-[10px] text-text-muted hover:text-accent shrink-0"
+                      >
+                        {t.repoStep.copy}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {step.error && <p className="text-[11px] text-error mb-2">{step.error}</p>}
+                <button
+                  onClick={verifyRepo}
+                  disabled={!repo || loading}
+                  className="px-4 py-1.5 bg-accent text-bg text-[12px] font-semibold hover:bg-accent-dim transition-colors disabled:opacity-50"
+                >
+                  {loading ? t.repoStep.verifying : t.repoStep.verify}
+                </button>
+              </div>
+            )}
+
+            {/* Step 3: Agent Models */}
+            {step?.id === "models" && (
+              <div>
+                <h2 className="text-sm font-semibold text-text mb-1">
+                  {t.modelsStep.title}
+                </h2>
+                <p className="text-[11px] text-text-muted mb-4">
+                  {t.modelsStep.desc}
+                </p>
+
+                {/* Single-CLI friendly message */}
+                {cliStatus && !cliStatus.claude && cliStatus.codex && (
+                  <div className="border border-accent/20 bg-accent/5 p-3 mb-4 text-[11px]">
+                    <p className="text-text">You have Codex CLI installed — great! All 4 agents will use Codex.</p>
+                    <p className="text-text-muted mt-1.5">
+                      Tip: Installing Claude Code too gives your team different AI perspectives,
+                      which can improve code review quality. You can add it anytime:
+                    </p>
+                    <p className="text-accent mt-1 font-mono text-[10px]">npm install -g @anthropic-ai/claude-code</p>
+                    <p className="text-text-muted mt-1.5">For now, Codex CLI handles everything perfectly. Let&apos;s continue!</p>
+                  </div>
+                )}
+                {cliStatus && cliStatus.claude && !cliStatus.codex && (
+                  <div className="border border-accent/20 bg-accent/5 p-3 mb-4 text-[11px]">
+                    <p className="text-text">You have Claude Code installed — great! All 4 agents will use Claude.</p>
+                    <p className="text-text-muted mt-1.5">
+                      Tip: Installing Codex CLI too gives your team different AI perspectives,
+                      which can improve code review quality. You can add it anytime:
+                    </p>
+                    <p className="text-accent mt-1 font-mono text-[10px]">npm install -g codex</p>
+                    <p className="text-text-muted mt-1.5">For now, Claude Code handles everything perfectly. Let&apos;s continue!</p>
+                  </div>
+                )}
+
+                <div className="border border-border mb-4">
+                  {AGENTS.map((agent) => (
+                    <div key={agent.key} className="flex items-center justify-between px-3 py-2 border-b border-border/50 last:border-b-0">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[11px] text-text font-semibold block">{agent.label}</span>
+                        <span className="text-[10px] text-text-muted">{agent.desc}</span>
+                      </div>
+                      <select
+                        value={backends[agent.key]}
+                        onChange={(e) => setBackends({ ...backends, [agent.key]: e.target.value })}
+                        className="bg-transparent border border-border px-2 py-0.5 text-[11px] text-text outline-none focus:border-accent cursor-pointer ml-3"
+                      >
+                        {BACKENDS.map((b) => (
+                          <option
+                            key={b.value}
+                            value={b.value}
+                            className="bg-bg-surface"
+                            disabled={cliStatus ? !cliStatus[b.value as keyof typeof cliStatus] : false}
+                          >
+                            {b.label}{cliStatus && !cliStatus[b.value as keyof typeof cliStatus] ? " (not installed)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Auto-approve toggle */}
+                <label className="flex items-center gap-2 mb-3 cursor-pointer" title="Enable permission bypass flags so agents can work autonomously without prompting for approval on every action">
+                  <input
+                    type="checkbox"
+                    checked={autoApprove}
+                    onChange={(e) => setAutoApprove(e.target.checked)}
+                    className="accent-accent"
+                  />
+                  <span className="text-[11px] text-text">
+                    Auto-approve agent actions
+                  </span>
+                  <span className="text-[10px] text-text-muted">
+                    (required for autonomous work)
+                  </span>
+                </label>
+
+                {/* Reviewer credentials toggle */}
+                <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showReviewerCreds}
+                    onChange={(e) => setShowReviewerCreds(e.target.checked)}
+                    className="accent-accent"
+                  />
+                  <span className="text-[11px] text-text-muted">
+                    Configure reviewer credentials (for GitHub PR reviews)
+                  </span>
+                </label>
+
+                {showReviewerCreds && (
+                  <div className="border border-border p-3 mb-4 space-y-3">
+                    <div>
+                      <label className="text-[11px] text-text-muted block mb-1">Reviewer GitHub username</label>
+                      <input
+                        value={reviewerUser}
+                        onChange={(e) => setReviewerUser(e.target.value)}
+                        placeholder="github-username"
+                        className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-text-muted block mb-2">Token source</label>
+                      <div className="flex gap-4 mb-2">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="tokenMode"
+                            checked={reviewerTokenMode === "paste"}
+                            onChange={() => setReviewerTokenMode("paste")}
+                            className="accent-accent"
+                          />
+                          <span className="text-[11px] text-text">Paste token</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="tokenMode"
+                            checked={reviewerTokenMode === "file"}
+                            onChange={() => setReviewerTokenMode("file")}
+                            className="accent-accent"
+                          />
+                          <span className="text-[11px] text-text">Use existing file</span>
+                        </label>
+                      </div>
+                      {reviewerTokenMode === "paste" ? (
+                        <>
+                          <input
+                            value={reviewerTokenValue}
+                            onChange={(e) => setReviewerTokenValue(e.target.value)}
+                            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                            type="password"
+                            className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent"
+                          />
+                          <div className="mt-2 text-[10px] text-text-muted leading-relaxed">
+                            <p>Paste a GitHub <span className="text-text">Personal Access Token (classic)</span>.</p>
+                            <p className="mt-1">
+                              Create one at{" "}
+                              <a
+                                href="https://github.com/settings/tokens"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-accent hover:underline"
+                              >
+                                github.com/settings/tokens
+                              </a>
+                              {" "}&#8594; Generate new token (classic)
+                            </p>
+                            <p className="mt-1">
+                              Required permission: <span className="text-accent">repo</span> (Full control of private repositories)
+                              <br />
+                              <span className="text-text-muted">Needed for reading PRs, posting reviews, and approving/requesting changes</span>
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            value={reviewerTokenPath}
+                            onChange={(e) => setReviewerTokenPath(e.target.value)}
+                            placeholder="~/.quadwork/reviewer-token"
+                            className="w-full bg-transparent border border-border px-2 py-1.5 text-[12px] text-text outline-none focus:border-accent"
+                          />
+                          {reviewerTokenPath && !reviewerTokenPath.startsWith("~/.quadwork") && !reviewerTokenPath.startsWith(String.raw`${process.env.HOME}/.quadwork`) && (
+                            <p className="text-[10px] text-[#ffcc00] mt-1">
+                              This path may be inside a git repository. Consider using the default ~/.quadwork/ location to avoid accidentally committing tokens.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={goNext}
+                  className="px-4 py-1.5 bg-accent text-bg text-[12px] font-semibold hover:bg-accent-dim transition-colors"
+                >
+                  {t.modelsStep.next}
+                </button>
+              </div>
+            )}
+
+            {/* Step 4: Working Directory */}
+            {step?.id === "workdir" && (
+              <WorkdirStep
+                repo={repo}
+                workingDir={workingDir}
+                setWorkingDir={setWorkingDir}
+                error={step.error}
+                onNext={goNext}
+              />
+            )}
+
+            {/* Step 5: Create Workspaces */}
+            {step?.id === "workspaces" && (
+              <div>
+                <h2 className="text-sm font-semibold text-text mb-1">{t.workspacesStep.title}</h2>
+                <p className="text-[11px] text-text-muted mb-4">
+                  {t.workspacesStep.desc}
+                </p>
+                {step.error && <p className="text-[11px] text-error mb-2">{step.error}</p>}
+                {workspaceLog.length > 0 && (
+                  <div className="border border-border bg-bg-surface p-3 mb-4 text-[11px] text-text-muted space-y-0.5 font-mono">
+                    {workspaceLog.map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={createWorkspaces}
+                  disabled={loading}
+                  className="px-4 py-1.5 bg-accent text-bg text-[12px] font-semibold hover:bg-accent-dim transition-colors disabled:opacity-50"
+                >
+                  {loading ? t.workspacesStep.creating : t.workspacesStep.create}
+                </button>
+              </div>
+            )}
+
+            {/* Step 6: Ready to Launch */}
+            {step?.id === "launch" && (
+              <div>
+                <h2 className="text-sm font-semibold text-text mb-1">{t.launchStep.title}</h2>
+                <p className="text-[11px] text-text-muted mb-4">
+                  {t.launchStep.desc}
+                </p>
+
+                {/* Team roster */}
+                <div className="border border-border mb-4">
+                  <div className="px-3 py-1.5 border-b border-border bg-bg-surface">
+                    <span className="text-[11px] text-text font-semibold">{t.launchStep.teamRoster}</span>
+                  </div>
+                  {AGENTS.map((agent) => (
+                    <div key={agent.key} className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 last:border-b-0">
+                      <span className="text-[11px] text-text font-semibold">{agent.label}</span>
+                      <span className="text-[10px] text-text-muted">{agent.role}</span>
+                      <span className="text-[11px] text-accent">{backends[agent.key] === "claude" ? "Claude Code" : "Codex"}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {step.error && <p className="text-[11px] text-error mb-2">{step.error}</p>}
+                {launchStatus === "done" && (
+                  <p className="text-[11px] text-accent mb-2">{t.launchStep.redirecting}</p>
+                )}
+                <button
+                  onClick={launchProject}
+                  disabled={launchStatus === "running" || launchStatus === "done"}
+                  className="px-5 py-2 bg-accent text-bg text-[12px] font-semibold hover:bg-accent-dim transition-colors disabled:opacity-50"
+                >
+                  {launchStatus === "running"
+                    ? t.launchStep.launching
+                    : launchStatus === "done"
+                      ? t.launchStep.launched
+                      : t.launchStep.launch}
+                </button>
+              </div>
+            )}
+
+            {currentStep >= steps.length && (
+              <div className="text-center py-8">
+                <p className="text-accent text-sm font-semibold">{t.setupComplete}</p>
+                <p className="text-[11px] text-text-muted mt-2">{t.redirectingToDashboard}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Live Preview Panel */}
+        <div className="w-64 shrink-0 border-l border-border p-4 overflow-y-auto bg-bg-surface/50">
+          <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">
+            {t.preview.title}
+          </h3>
+          <div className="space-y-3 text-[11px]">
+            <div>
+              <span className="text-text-muted block mb-0.5">{t.preview.project}</span>
+              <span className="text-text">{projectName || "\u2014"}</span>
+            </div>
+            <div>
+              <span className="text-text-muted block mb-0.5">{t.preview.repo}</span>
+              <span className="text-text">{repo || "\u2014"}</span>
+              {enableProtection && <span className="text-[10px] text-accent block">{t.preview.branchProtection}</span>}
+            </div>
+            <div>
+              <span className="text-text-muted block mb-0.5">{t.preview.backends}</span>
+              {Object.entries(backends).map(([agent, backend]) => (
+                <div key={agent} className="flex justify-between">
+                  <span className="text-text capitalize">{agent}</span>
+                  <span className="text-accent">{backend}</span>
+                </div>
+              ))}
+            </div>
+            {showReviewerCreds && reviewerUser && (
+              <div>
+                <span className="text-text-muted block mb-0.5">{t.preview.reviewer}</span>
+                <span className="text-text">@{reviewerUser}</span>
+              </div>
+            )}
+            <div>
+              <span className="text-text-muted block mb-0.5">{t.preview.directory}</span>
+              <span className="text-text font-mono text-[10px]">{workingDir || "\u2014"}</span>
+            </div>
+            <div>
+              <span className="text-text-muted block mb-0.5">{t.preview.status}</span>
+              <div className="space-y-0.5">
+                {steps.map((s) => (
+                  <div key={s.id} className="flex items-center gap-1.5">
+                    <span className={`text-[10px] ${
+                      s.status === "done" ? "text-accent" :
+                      s.status === "error" ? "text-error" :
+                      s.status === "active" ? "text-text" :
+                      "text-text-muted"
+                    }`}>
+                      {s.status === "done" ? "\u2713" : s.status === "error" ? "\u2717" : s.status === "active" ? "\u25cf" : "\u25cb"}
+                    </span>
+                    <span className={`text-[10px] ${s.status === "active" ? "text-text" : "text-text-muted"}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

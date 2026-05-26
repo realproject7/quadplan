@@ -1,0 +1,244 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import InfoTooltip from "./InfoTooltip";
+import { useLocale } from "@/components/LocaleProvider";
+
+const COPY = {
+  en: {
+    title: "Loop Guard",
+    tooltip: (
+      <>
+        <b>Loop Guard</b> pauses agent-to-agent message chains after this many hops with no human reply. Higher values let agents work longer overnight; lower values add safety against runaway loops. Accepts <b>4–50</b>; QuadWork defaults to <b>30</b> (about 5–6 full PR cycles). Posting any chat message yourself resets the counter immediately.
+      </>
+    ),
+    pauseAfter: "Pause after",
+    hops: "hops",
+    apply: "Apply",
+    applying: "…",
+    applyTitle: "Apply (saves to project config)",
+    errorInteger: "Must be an integer between 4 and 50.",
+    liveUpdateFailed: "Saved — live update failed; takes effect on next restart.",
+    autoContinue: "Auto-continue after pause",
+    wait: "— wait",
+    secondsBefore: "s before /continue",
+  },
+  ko: {
+    title: "루프 가드",
+    tooltip: (
+      <>
+        <b>루프 가드</b> - 사람의 응답 없이 에이전트끼리 메시지를 주고받는 횟수가 이 값에 도달하면 체인을 멈춥니다. 값을 높이면 야간 작업을 더 길게 돌릴 수 있고, 낮추면 runaway loop에 대한 안전성이 높아집니다. 허용 범위는 <b>4-50</b>이며 QuadWork 기본값은 <b>30</b>입니다. 직접 채팅을 한 번 보내면 카운터는 즉시 초기화됩니다.
+      </>
+    ),
+    pauseAfter: "다음 횟수 후 일시정지:",
+    hops: "홉",
+    apply: "적용",
+    applying: "…",
+    applyTitle: "적용 (프로젝트 설정에 저장)",
+    errorInteger: "4에서 50 사이의 정수여야 합니다.",
+    liveUpdateFailed: "저장되었습니다. 실시간 업데이트는 실패하여 다음 재시작 때 적용됩니다.",
+    autoContinue: "일시정지 후 자동 재개",
+    wait: "—",
+    secondsBefore: "초 대기 후 /continue",
+  },
+} as const;
+
+interface LoopGuardWidgetProps {
+  projectId: string;
+}
+
+/**
+ * #403 / quadwork#274: operator widget for the loop guard
+ * (max_agent_hops). The default is 4, which fires mid-cycle on a
+ * normal autonomous PR review (head→dev→re1+re2→dev→head merge ≈ 5
+ * hops). QuadWork ships with 30 by default but the operator may
+ * want to tune it. The widget reads the persisted value from the
+ * project's config.json and writes back through /api/loop-guard,
+ * which updates config.json and live-pushes to the running server
+ * via WebSocket so the change is immediate.
+ */
+export default function LoopGuardWidget({ projectId }: LoopGuardWidgetProps) {
+  const { locale } = useLocale();
+  const t = COPY[locale];
+  const [value, setValue] = useState<number>(30);
+  const [draft, setDraft] = useState<string>("30");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [live, setLive] = useState<boolean | null>(null);
+  // #422 / quadwork#310: per-project auto-continue opt-in. Default
+  // OFF — operators opt in knowing the trade-off (runaway loops
+  // will silently resume after the delay). Hydrated from /api/config
+  // on mount; saving flips the field and PUTs the whole config back.
+  const [autoContinue, setAutoContinue] = useState<boolean>(false);
+  const [autoContinueDelaySec, setAutoContinueDelaySec] = useState<number>(30);
+  const [autoContinueDelayDraft, setAutoContinueDelayDraft] = useState<string>("30");
+  const [autoContinueSaving, setAutoContinueSaving] = useState(false);
+
+  // Load on mount + when project changes.
+  useEffect(() => {
+    fetch(`/api/loop-guard?project=${encodeURIComponent(projectId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.value === "number") {
+          setValue(d.value);
+          setDraft(String(d.value));
+        }
+      })
+      .catch(() => {});
+    // #422 / quadwork#310: read auto-continue prefs from the whole
+    // config (they live on the project entry, not the loop-guard
+    // endpoint). Scoped to the current projectId.
+    fetch(`/api/config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((cfg) => {
+        if (!cfg || !Array.isArray(cfg.projects)) return;
+        const proj = cfg.projects.find((p: { id: string }) => p.id === projectId);
+        if (!proj) return;
+        setAutoContinue(!!proj.auto_continue_loop_guard);
+        const d = Number.isFinite(proj.auto_continue_delay_sec) ? proj.auto_continue_delay_sec : 30;
+        setAutoContinueDelaySec(d);
+        setAutoContinueDelayDraft(String(d));
+      })
+      .catch(() => {});
+  }, [projectId]);
+
+  // Persist auto-continue prefs by fetching current config, mutating
+  // the target project's two fields, and PUT'ing back. We keep the
+  // whole-config PUT contract the SettingsPage uses so we don't
+  // have to add a new endpoint for two flags. Failures leave the
+  // in-memory checkbox out of sync with disk, which the next mount
+  // will correct.
+  const saveAutoContinue = async (nextEnabled: boolean, nextDelay: number) => {
+    setAutoContinueSaving(true);
+    try {
+      const cfgRes = await fetch(`/api/config`);
+      if (!cfgRes.ok) throw new Error(`GET /api/config ${cfgRes.status}`);
+      const cfg = await cfgRes.json();
+      if (!cfg || !Array.isArray(cfg.projects)) throw new Error("config shape");
+      const idx = cfg.projects.findIndex((p: { id: string }) => p.id === projectId);
+      if (idx < 0) throw new Error(`project ${projectId} not found`);
+      cfg.projects[idx] = {
+        ...cfg.projects[idx],
+        auto_continue_loop_guard: nextEnabled,
+        auto_continue_delay_sec: nextDelay,
+      };
+      const putRes = await fetch(`/api/config`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cfg),
+      });
+      if (!putRes.ok) throw new Error(`PUT /api/config ${putRes.status}`);
+    } finally {
+      setAutoContinueSaving(false);
+    }
+  };
+
+  const apply = () => {
+    const n = parseInt(draft, 10);
+    if (!Number.isInteger(n) || n < 4 || n > 50) {
+      setError(t.errorInteger);
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    fetch(`/api/loop-guard?project=${encodeURIComponent(projectId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: n }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          throw new Error(`${r.status}: ${body.slice(0, 120)}`);
+        }
+        return r.json();
+      })
+      .then((d) => {
+        setValue(d.value);
+        setLive(d.live);
+      })
+      .catch((err) => setError(err.message || String(err)))
+      .finally(() => setSaving(false));
+  };
+
+  return (
+    <div className="border border-border rounded p-2 text-[11px] font-mono">
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className="uppercase tracking-wider text-text-muted">{t.title}</span>
+        <InfoTooltip>
+          {t.tooltip}
+        </InfoTooltip>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-text-muted">{t.pauseAfter}</span>
+        <input
+          type="number"
+          min={4}
+          max={50}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          disabled={saving}
+          className="w-12 bg-transparent px-1 py-0.5 border border-border rounded text-text outline-none focus:ring-1 focus:ring-accent"
+        />
+        <span className="text-text-muted">{t.hops}</span>
+        <button
+          type="button"
+          onClick={apply}
+          disabled={saving || draft === String(value)}
+          className="ml-auto px-2 py-0.5 text-[10px] text-accent border border-accent/40 rounded hover:bg-accent/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          title={t.applyTitle}
+        >
+          {saving ? t.applying : t.apply}
+        </button>
+      </div>
+      {error && (
+        <div className="mt-1 text-[10px] text-red-400">{error}</div>
+      )}
+      {live === false && !error && (
+        <div className="mt-1 text-[10px] text-text-muted">
+          {t.liveUpdateFailed}
+        </div>
+      )}
+      {/* #422 / quadwork#310: auto-continue opt-in. Default OFF so
+          operators have to explicitly enable "resume the loop guard
+          for me". Delay default 30s, min 5s (prevents pathological
+          tight loops from resuming instantly). */}
+      <label className="mt-2 flex items-center gap-1.5 text-[10px] text-text-muted cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={autoContinue}
+          disabled={autoContinueSaving}
+          onChange={(e) => {
+            const next = e.target.checked;
+            setAutoContinue(next);
+            saveAutoContinue(next, autoContinueDelaySec).catch(() => {
+              // revert on failure
+              setAutoContinue(!next);
+            });
+          }}
+        />
+        {t.autoContinue}
+        <span className="text-text-muted">{t.wait}</span>
+        <input
+          type="number"
+          min={5}
+          max={300}
+          value={autoContinueDelayDraft}
+          disabled={autoContinueSaving || !autoContinue}
+          onChange={(e) => setAutoContinueDelayDraft(e.target.value)}
+          onBlur={() => {
+            const n = parseInt(autoContinueDelayDraft, 10);
+            const clamped = Number.isFinite(n) ? Math.max(5, Math.min(300, n)) : 30;
+            setAutoContinueDelaySec(clamped);
+            setAutoContinueDelayDraft(String(clamped));
+            if (clamped !== autoContinueDelaySec) {
+              saveAutoContinue(autoContinue, clamped).catch(() => {});
+            }
+          }}
+          className="w-10 bg-transparent px-1 py-0.5 border border-border rounded text-text outline-none focus:ring-1 focus:ring-accent disabled:opacity-40 text-center"
+        />
+        <span className="text-text-muted">{t.secondsBefore}</span>
+      </label>
+    </div>
+  );
+}
