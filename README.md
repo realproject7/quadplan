@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/icon.png" alt="QuadWork" width="80" />
+<img src="public/icon.svg" alt="QuadPlan" width="80" />
 
 # QuadWork
 
