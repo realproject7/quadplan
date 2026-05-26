@@ -77,9 +77,9 @@ const COPY = {
     operatorHelp:
       "Shows next to your messages in the project chat panel. Defaults to user if blank. Allowed: 1-32 letters, digits, dash, underscore (other characters are stripped server-side). Reserved agent names like head, dev, re1, re2, and system are rejected and fall back to user.",
     global: "Global",
-    dashboardPort: "QuadWork Dashboard Port",
+    dashboardPort: "QuadPlan Dashboard Port",
     globalHelp:
-      "The dashboard binds to the QuadWork port.",
+      "The dashboard binds to the QuadPlan port.",
     defaults: "Defaults",
     defaultAgentCli: "Default agent CLI",
     reviewerGithubUser: "Reviewer GitHub user",
@@ -155,9 +155,9 @@ const COPY = {
     operatorHelp:
       "프로젝트 채팅 패널에서 내 메시지 옆에 표시됩니다. 비워두면 기본값은 user입니다. 허용: 1-32자의 영문, 숫자, 하이픈, 언더스코어. 다른 문자는 서버에서 제거됩니다. head, dev, re1, re2, system 같은 예약 이름은 거부되고 user로 대체됩니다.",
     global: "전역",
-    dashboardPort: "QuadWork 대시보드 포트",
+    dashboardPort: "QuadPlan 대시보드 포트",
     globalHelp:
-      "대시보드는 QuadWork 포트에 바인딩됩니다.",
+      "대시보드는 QuadPlan 포트에 바인딩됩니다.",
     defaults: "기본값",
     defaultAgentCli: "기본 에이전트 CLI",
     reviewerGithubUser: "리뷰어 GitHub 사용자",

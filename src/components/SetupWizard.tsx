@@ -26,8 +26,8 @@ interface Repo {
 
 const COPY = {
   en: {
-    title: "Set Up Your AI Dev Team",
-    subtitle: "Configure agents, connect your repo, and launch a multi-agent development workflow in minutes.",
+    title: "Set Up Your Planning Team",
+    subtitle: "Configure agents, connect your repo, and launch a multi-agent planning workflow in minutes.",
     steps: {
       name: { label: "Project Name", subtitle: "Name your project" },
       repo: { label: "GitHub Repo", subtitle: "Connect a repository" },
@@ -38,7 +38,7 @@ const COPY = {
     },
     workdir: {
       title: "Where is your project?",
-      desc: "Your project's git repository on your local machine. QuadWork will create 4 agent workspaces next to this directory.",
+      desc: "Your project's git repository on your local machine. QuadPlan will create 3 agent workspaces next to this directory.",
       scanning: "Scanning for existing clone...",
       found: "Found existing clone",
       useThis: "Use this",
@@ -117,7 +117,7 @@ const COPY = {
     },
     workdir: {
       title: "프로젝트 위치는 어디인가요?",
-      desc: "로컬 머신에 있는 프로젝트의 Git 저장소 경로입니다. QuadWork는 이 디렉터리 옆에 4개의 에이전트 워크스페이스를 생성합니다.",
+      desc: "로컬 머신에 있는 프로젝트의 Git 저장소 경로입니다. QuadPlan은 이 디렉터리 옆에 3개의 에이전트 워크스페이스를 생성합니다.",
       scanning: "기존 클론을 찾는 중...",
       found: "기존 클론을 찾았습니다",
       useThis: "이 경로 사용",

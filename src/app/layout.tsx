@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QuadWork",
-  description: "Unified dashboard for multi-agent coding teams",
+  title: "QuadPlan",
+  description: "Local-first planning team for pre-development proposals, tickets, and design review",
 };
 
 export default function RootLayout({

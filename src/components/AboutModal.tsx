@@ -42,18 +42,18 @@ export default function AboutModal({ open, onClose }: AboutModalProps) {
           </svg>
         </button>
 
-        <h2 id="about-title" className="text-lg font-semibold text-white">What is QuadWork?</h2>
+        <h2 id="about-title" className="text-lg font-semibold text-white">What is QuadPlan?</h2>
         <p className="mt-3 text-sm leading-relaxed text-neutral-300">
-          QuadWork is a local dashboard that runs a team of 4 AI agents — Head, Dev, and two Reviewers — that code, review, and ship while you sleep.
+          QuadPlan is a local dashboard that runs a planning team of 3 AI agents — HEAD, RE1, and RE2 — that create proposals, tickets, and design artifacts before development begins.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-neutral-300">
-          Every task follows a strict GitHub workflow: Issue → Branch → Pull Request → 2 Reviews → Merge. Branch protection ensures no agent can skip the process.
+          Every planning artifact follows a review workflow: Draft → Review by RE1 and RE2 → Revision → Approval. Two independent approvals are required before work is considered done.
         </p>
 
-        <h3 className="mt-5 text-sm font-semibold text-white">Why QuadWork?</h3>
+        <h3 className="mt-5 text-sm font-semibold text-white">Why QuadPlan?</h3>
         <ul className="mt-2 space-y-1.5 text-sm text-neutral-300">
           <li>🤖 <b>Run 24/7</b> — agents work overnight while you rest</li>
-          <li>🛡️ <b>Always reviewed</b> — every PR needs 2 independent approvals</li>
+          <li>🛡️ <b>Always reviewed</b> — every artifact needs 2 independent approvals</li>
           <li>🔒 <b>Local-first</b> — runs entirely on your machine, no data leaves</li>
           <li>🧰 <b>Bring your own CLI</b> — works with Claude Code, Codex, or both</li>
           <li>📦 <b>One install</b> — <code className="rounded bg-white/5 px-1 py-0.5 text-[12px]">npx quadwork init</code> and you&apos;re set</li>

@@ -9,7 +9,7 @@ const COPY = {
     title: "Loop Guard",
     tooltip: (
       <>
-        <b>Loop Guard</b> pauses agent-to-agent message chains after this many hops with no human reply. Higher values let agents work longer overnight; lower values add safety against runaway loops. Accepts <b>4–50</b>; QuadWork defaults to <b>30</b> (about 5–6 full PR cycles). Posting any chat message yourself resets the counter immediately.
+        <b>Loop Guard</b> pauses agent-to-agent message chains after this many hops with no human reply. Higher values let agents work longer overnight; lower values add safety against runaway loops. Accepts <b>4–50</b>; QuadPlan defaults to <b>30</b> (about 5–6 full review cycles). Posting any chat message yourself resets the counter immediately.
       </>
     ),
     pauseAfter: "Pause after",
@@ -27,7 +27,7 @@ const COPY = {
     title: "루프 가드",
     tooltip: (
       <>
-        <b>루프 가드</b> - 사람의 응답 없이 에이전트끼리 메시지를 주고받는 횟수가 이 값에 도달하면 체인을 멈춥니다. 값을 높이면 야간 작업을 더 길게 돌릴 수 있고, 낮추면 runaway loop에 대한 안전성이 높아집니다. 허용 범위는 <b>4-50</b>이며 QuadWork 기본값은 <b>30</b>입니다. 직접 채팅을 한 번 보내면 카운터는 즉시 초기화됩니다.
+        <b>루프 가드</b> - 사람의 응답 없이 에이전트끼리 메시지를 주고받는 횟수가 이 값에 도달하면 체인을 멈춥니다. 값을 높이면 야간 작업을 더 길게 돌릴 수 있고, 낮추면 runaway loop에 대한 안전성이 높아집니다. 허용 범위는 <b>4-50</b>이며 QuadPlan 기본값은 <b>30</b>입니다. 직접 채팅을 한 번 보내면 카운터는 즉시 초기화됩니다.
       </>
     ),
     pauseAfter: "다음 횟수 후 일시정지:",
