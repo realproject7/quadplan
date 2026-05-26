@@ -15,6 +15,7 @@ const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
 const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
 const { sendPlanningPulse } = require("./planning-loop-pulse");
+const { discoverArtifacts, readArtifactContent } = require("./artifact-preview");
 
 const router = express.Router();
 
@@ -1885,6 +1886,28 @@ router.get("/api/planning-progress", (req, res) => {
   const summary = summarizeBatch(artifacts);
 
   return res.json({ batchNumber, batchTitle, artifacts: rows, summary });
+});
+
+router.get("/api/artifacts", (req, res) => {
+  const projectId = req.query.project;
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+
+  const artifacts = discoverArtifacts(projectId);
+  if (artifacts === null) return res.status(404).json({ error: "Unknown project" });
+
+  return res.json({ artifacts: artifacts.map((a) => ({ relativePath: a.relativePath, type: a.type, name: a.name, ext: a.ext })) });
+});
+
+router.get("/api/artifact-preview", (req, res) => {
+  const projectId = req.query.project;
+  const filePath = req.query.path;
+  if (!projectId) return res.status(400).json({ error: "Missing project" });
+  if (!filePath) return res.status(400).json({ error: "Missing path" });
+
+  const result = readArtifactContent(projectId, filePath);
+  if (!result.ok) return res.status(result.error === "Path outside allowed directories" ? 403 : 404).json({ error: result.error });
+
+  return res.json({ content: result.content, ext: result.ext });
 });
 
 const _planningLoopTimers = new Map();
