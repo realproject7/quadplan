@@ -103,19 +103,19 @@ function StatusDot({ color }: { color: string }) {
 }
 
 function issueStatusColor(state: string): string {
-  return state === "OPEN" ? "bg-accent" : "bg-error";
+  return state === "OPEN" ? "bg-success" : "bg-error";
 }
 
 function reviewColor(decision: string): string {
-  if (decision === "APPROVED") return "bg-accent";
+  if (decision === "APPROVED") return "bg-success";
   if (decision === "CHANGES_REQUESTED") return "bg-error";
-  return "bg-[#ffcc00]";
+  return "bg-warning";
 }
 
 function reviewTextColor(decision: string): string {
-  if (decision === "APPROVED") return "text-accent";
+  if (decision === "APPROVED") return "text-success";
   if (decision === "CHANGES_REQUESTED") return "text-error";
-  return "text-[#ffcc00]";
+  return "text-warning";
 }
 
 function reviewLabel(decision: string): string {
@@ -127,9 +127,9 @@ function reviewLabel(decision: string): string {
 function ciColor(rollup: { state: string }[]): string {
   if (!rollup || rollup.length === 0) return "text-text-muted";
   const states = rollup.map((c) => c.state);
-  if (states.every((s) => s === "SUCCESS")) return "text-accent";
+  if (states.every((s) => s === "SUCCESS")) return "text-success";
   if (states.some((s) => s === "FAILURE" || s === "ERROR")) return "text-error";
-  return "text-[#ffcc00]";
+  return "text-warning";
 }
 
 function ciLabel(rollup: { state: string }[]): string {

@@ -17,7 +17,7 @@ interface PanelHeaderProps {
 export default function PanelHeader({ label, status, projectId, agentId, onStatusChange, tooltip, children }: PanelHeaderProps) {
   const dotColor =
     status === "running"
-      ? "bg-accent"
+      ? "bg-success"
       : status === "error"
         ? "bg-error"
         : "bg-text-muted";

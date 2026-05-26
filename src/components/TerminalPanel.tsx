@@ -79,9 +79,9 @@ export default function TerminalPanel({
       theme: {
         background: "#0a0a0a",
         foreground: "#e0e0e0",
-        cursor: "#00ff88",
+        cursor: "#ff2bd6",
         cursorAccent: "#0a0a0a",
-        selectionBackground: "#00ff8844",
+        selectionBackground: "#ff2bd644",
         black: "#0a0a0a",
         red: "#ff4444",
         green: "#00ff88",

@@ -3,12 +3,16 @@
 :root {
   --bg: #0a0a0a;
   --bg-surface: #111111;
-  --text: #e0e0e0;
-  --text-muted: #737373;
-  --accent: #00ff88;
-  --accent-dim: #00cc6a;
-  --border: #2a2a2a;
-  --error: #ff4444;
+  --text: #e8e2e8;
+  --text-muted: #8a7f8a;
+  --accent: #ff2bd6;
+  --accent-dim: #d926b0;
+  --accent-soft: rgba(255, 43, 214, 0.12);
+  --border: #30242f;
+  --border-strong: #5a2a52;
+  --error: #ff4d6d;
+  --warning: #ffcc00;
+  --success: #00ff88;
 }
 
 @theme inline {
@@ -18,8 +22,12 @@
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
+  --color-accent-soft: var(--accent-soft);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -61,7 +69,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--text-muted);
 }
 
-/* Focus ring — accent green, sharp */
+/* Focus ring — accent magenta, sharp */
 *:focus-visible {
   outline: 1px solid var(--accent);
   outline-offset: 1px;
@@ -79,7 +87,7 @@ h1, h2, h3, h4, h5, h6 {
 /* #421 / quadwork#305: activity-indicator text shimmer.
    Color-only (no text-shadow, no background, no filter) so the
    shimmer matches the "minimal aesthetic" constraint in the
-   ticket. Pulses between the accent green and a desaturated
+   ticket. Pulses between the accent magenta and a desaturated
    mid-point so the active agent label stands out against the
    muted sibling labels without being garish. */
 @keyframes qw-name-shimmer {
@@ -91,8 +99,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes qw-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(0, 255, 136, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 43, 214, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(255, 43, 214, 0); }
 }
 .animate-pulse-ring {
   animation: qw-pulse 2s ease-in-out infinite;
