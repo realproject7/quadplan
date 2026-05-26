@@ -116,11 +116,17 @@ export default function PlanningLoopWidget({ projectId }: PlanningLoopWidgetProp
 
   const handlePulseNow = async () => {
     setPulsing(true);
-    await fetch(`/api/planning-loop/pulse`, {
+    const resp = await fetch(`/api/planning-loop/pulse`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project: projectId }),
     });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.lastPulse) {
+        setStatus((prev) => ({ ...prev, lastPulse: data.lastPulse }));
+      }
+    }
     setPulsing(false);
     setPulseFlash(true);
     setTimeout(() => setPulseFlash(false), 2000);
@@ -189,6 +195,16 @@ export default function PlanningLoopWidget({ projectId }: PlanningLoopWidgetProp
 
         {/* Status row */}
         <div className="flex items-center gap-4 text-[10px] text-text-muted">
+          <span className="flex items-center gap-1">
+            {t.state}:
+            <span className={
+              status.state === "running" ? "text-success" :
+              status.state === "error" ? "text-error" :
+              "text-text-muted"
+            }>
+              {status.state}
+            </span>
+          </span>
           <span>
             {t.lastPulse}: {status.lastPulse ? formatTime(status.lastPulse) : t.never}
           </span>

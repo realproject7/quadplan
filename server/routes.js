@@ -1900,7 +1900,10 @@ router.post("/api/planning-loop/pulse", (req, res) => {
   const customMessage = req.body && req.body.message;
   const result = sendPlanningPulse(projectId, customMessage, fileChat);
   if (!result.ok) return res.status(500).json(result);
-  return res.json({ ok: true, sent: true });
+  const now = Date.now();
+  const info = _planningLoopTimers.get(projectId);
+  if (info) info.lastPulse = now;
+  return res.json({ ok: true, sent: true, lastPulse: now });
 });
 
 router.post("/api/planning-loop/start", (req, res) => {
