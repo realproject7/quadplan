@@ -140,7 +140,7 @@ export default function ButlerChat() {
         const res = await fetch("/api/config");
         if (res.ok) {
           const cfg = await res.json();
-          const backendPort = cfg.port || 8400;
+          const backendPort = cfg.port || 8500;
           const currentPort = parseInt(window.location.port, 10);
           if (currentPort && currentPort !== backendPort) {
             baseUrl = `${wsProto}//${window.location.hostname}:${backendPort}`;

@@ -6,7 +6,7 @@ const CONFIG_DIR = path.join(os.homedir(), ".quadplan");
 const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
 
 const DEFAULT_CONFIG = {
-  port: 8400,
+  port: 8500,
   operator_name: "user",
   butler: {
     enabled: false,

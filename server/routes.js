@@ -153,7 +153,7 @@ function cachedGhEndpoint(cacheKey, ghArgs, res, { transform } = {}) {
 }
 
 const DEFAULT_CONFIG = {
-  port: 8400,
+  port: 8500,
   projects: [],
 };
 
@@ -592,8 +592,8 @@ router.post("/api/project-history/restore", async (req, res) => {
   // legitimate disaster-recovery case the #297 denylist expected.
   try {
     const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-    const qwPort = cfg.port || 8400;
-    const r = await fetch(`http://127.0.0.1:${qwPort}/api/project-history?project=${encodeURIComponent(projectId)}`, {
+    const qpPort = cfg.port || 8500;
+    const r = await fetch(`http://127.0.0.1:${qpPort}/api/project-history?project=${encodeURIComponent(projectId)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...body, allow_agent_senders: true, allow_duplicate: true }),
@@ -2440,7 +2440,7 @@ router.post("/api/setup", (req, res) => {
       const parentDir = path.dirname(workingDir);
       let cfg;
       try { cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8")); }
-      catch { cfg = { port: 8400, projects: [] }; }
+      catch { cfg = { port: 8500, projects: [] }; }
       if (cfg.projects.some((p) => p.id === id)) {
         // Project already saved, but still (idempotently) seed the
         // OVERNIGHT-QUEUE.md in case a previous run failed to write
@@ -2716,8 +2716,8 @@ router.post("/api/telegram", async (req, res) => {
       if (!tg || !tg.bot_token || !tg.chat_id) return res.json({ ok: false, error: "Save bot_token and chat_id in project settings first." });
       try {
         const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-        const qwPort = cfg.port || 8400;
-        telegramBridge.start(projectId, tg.bot_token, tg.chat_id, qwPort);
+        const qpPort = cfg.port || 8500;
+        telegramBridge.start(projectId, tg.bot_token, tg.chat_id, qpPort);
         emitSystemMessage(projectId, "Telegram bridge connected");
         return res.json({ ok: true, running: true });
       } catch (err) {
@@ -2891,8 +2891,8 @@ router.post("/api/discord", async (req, res) => {
       if (!dc || !dc.bot_token || !dc.channel_id) return res.json({ ok: false, error: "Save bot_token and channel_id in project settings first." });
       try {
         const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-        const qwPort = cfg.port || 8400;
-        await discordBridge.start(projectId, dc.bot_token, dc.channel_id, qwPort);
+        const qpPort = cfg.port || 8500;
+        await discordBridge.start(projectId, dc.bot_token, dc.channel_id, qpPort);
         emitSystemMessage(projectId, "Discord bridge connected");
         return res.json({ ok: true, running: true });
       } catch (err) {

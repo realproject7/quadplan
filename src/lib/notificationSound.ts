@@ -23,9 +23,9 @@ export const NOTIFICATION_SOUND_OPTIONS: { value: NotificationSoundChoice; label
   { value: "pluck", label: "Pluck" },
 ];
 
-const KEY_ENABLED = "quadwork_notification_sound";
-const KEY_CHOICE = "quadwork_notification_sound_choice";
-const KEY_BG = "quadwork_notification_sound_background_only";
+const KEY_ENABLED = "quadplan_notification_sound";
+const KEY_CHOICE = "quadplan_notification_sound_choice";
+const KEY_BG = "quadplan_notification_sound_background_only";
 
 function safeRead(key: string): string | null {
   if (typeof window === "undefined") return null;

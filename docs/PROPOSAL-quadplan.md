@@ -463,7 +463,7 @@ Recommended MVP config:
 
 ```json
 {
-  "port": 8400,
+  "port": 8500,
   "operator_name": "user",
   "butler": {
     "enabled": true,

@@ -22,7 +22,7 @@ function setup() {
   const { writeConfig, CONFIG_DIR, CONFIG_PATH } = require("./config");
   fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
   writeConfig({
-    port: 8400,
+    port: 8500,
     operator_name: "user",
     butler: { enabled: false, cwd: null, command: null },
     projects: [
