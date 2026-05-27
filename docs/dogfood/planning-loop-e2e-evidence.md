@@ -118,6 +118,74 @@ Both pulses were emitted through the live QuadPlan server endpoint:
 curl -X POST 'http://127.0.0.1:8500/api/planning-loop/pulse?project=dogfood-e2e'
 ```
 
+### Queue Before Pulse #1
+
+Both artifacts queued, no work started. Matches the initial queue snapshot above.
+
+```markdown
+### QP-001 — Draft tiny habit tracker ticket batch
+- Status: queued
+- Review: RE1 pending, RE2 pending
+
+### QP-002 — Write tiny habit tracker design overview
+- Status: queued
+- Review: RE1 pending, RE2 pending
+```
+
+### Queue After Pulse #1
+
+HEAD woke, created `artifacts/tickets/batch-1.md`, requested review (msg 5). QP-001 advanced to `in review`; QP-002 unchanged.
+
+```markdown
+### QP-001 — Draft tiny habit tracker ticket batch
+- Status: in review
+- Review: RE1 pending, RE2 pending
+- Output: artifacts/tickets/batch-1.md
+
+### QP-002 — Write tiny habit tracker design overview
+- Status: queued
+- Review: RE1 pending, RE2 pending
+```
+
+Between pulses: RE1 approved QP-001 (msg 6), RE2 approved QP-001 (msg 7).
+
+### Queue Before Pulse #2
+
+QP-001 has both approvals but HEAD has not yet processed them. QP-002 still queued.
+
+```markdown
+### QP-001 — Draft tiny habit tracker ticket batch
+- Status: in review
+- Review: RE1 approved, RE2 approved
+- Output: artifacts/tickets/batch-1.md
+
+### QP-002 — Write tiny habit tracker design overview
+- Status: queued
+- Review: RE1 pending, RE2 pending
+```
+
+### Queue After Pulse #2
+
+HEAD woke, moved QP-001 to Done, created `artifacts/docs/design-overview.md` for QP-002 and requested review (msg 9).
+
+```markdown
+## Done
+
+### QP-001 — Draft tiny habit tracker ticket batch
+- Status: done
+- Review: RE1 approved, RE2 approved
+- Output: artifacts/tickets/batch-1.md
+
+## Active Batch
+
+### QP-002 — Write tiny habit tracker design overview
+- Status: in review
+- Review: RE1 pending, RE2 pending
+- Output: artifacts/docs/design-overview.md
+```
+
+After pulse #2: RE2 approved QP-002 (msg 10), RE1 approved QP-002 (msg 11), HEAD moved QP-002 to Done (msg 12).
+
 ## Chat Evidence
 
 Key message IDs from `/Users/cho/.quadplan/dogfood-e2e/chat/general.jsonl`:
