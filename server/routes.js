@@ -1983,10 +1983,13 @@ router.post("/api/planning-loop/pulse", (req, res) => {
   const message = normalizeMentions(customMessage || PLANNING_PULSE_MESSAGE);
   const result = sendPlanningPulse(projectId, message, fileChat);
   if (!result.ok) return res.status(500).json(result);
-  // Loop guard intentionally skipped: pulses are system infrastructure, not
-  // agent-to-agent chat, so they must not increment the hop counter. The
-  // timer path separately respects isLoopGuardPaused to avoid waking agents
-  // during a paused guard.
+  // Loop guard intentionally skipped at route level: pulses are system
+  // infrastructure, not agent-to-agent chat, so they must not increment the
+  // hop counter. The message is always appended to file-chat, and the
+  // dispatch callback is always invoked; dispatchToAgentPTY's own
+  // isLoopGuardPaused check suppresses PTY injection when the guard is
+  // paused. The timer path additionally checks isLoopGuardPaused before
+  // calling sendPlanningPulse at all.
   if (_ptyDispatchCallback && result.record) _ptyDispatchCallback(projectId, result.record);
   const now = Date.now();
   _planningLoopLastPulse.set(projectId, now);

@@ -231,7 +231,7 @@ describe("pulse loop guard behavior", () => {
     }
   });
 
-  it("manual pulse still dispatches when loop guard is paused", async () => {
+  it("manual pulse appends message when guard is paused but dispatcher suppresses PTY wake", async () => {
     const { server, routes, dispatched } = await createServer("guard3");
     try {
       const { port } = server.address();
@@ -247,19 +247,47 @@ describe("pulse loop guard behavior", () => {
       }
       assert.ok(fileChat.isLoopGuardPaused("guard3"), "guard is paused");
 
-      // Manual pulse should still send (operator-initiated)
+      // Manual pulse appends the message and invokes the dispatch callback
       const res = await fetch(`http://127.0.0.1:${port}/api/planning-loop/pulse?project=guard3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       });
       assert.equal(res.status, 200);
-      assert.equal(dispatched.length, 1, "manual pulse dispatches even when guard is paused");
+      assert.equal(dispatched.length, 1, "route invokes dispatch callback");
+
+      // Message is persisted in chat even when guard is paused
+      const msgs = fileChat.readMessages("guard3", { limit: 50 });
+      const pulse = msgs.find(m => m.sender === "system" && m.text.includes("Queue check"));
+      assert.ok(pulse, "pulse message persisted in chat log during paused guard");
     } finally {
       await new Promise((r) => server.close(r));
       routes.setPtyDispatchCallback(null);
       if (typeof routes._testCleanup === "function") routes._testCleanup();
     }
+  });
+
+  it("dispatchToAgentPTY suppresses PTY injection when guard is paused", () => {
+    const { dispatchToAgentPTY, cleanupSession } = require("./pty-dispatcher");
+    const written = [];
+    const term = {
+      write: (data) => written.push(data),
+      onData: (cb) => ({ dispose: () => {} }),
+    };
+    const sessions = new Map();
+    sessions.set("guard4/head", {
+      projectId: "guard4", agentId: "head", term, state: "running", lastOutputAt: 0,
+    });
+    const deps = {
+      isLoopGuardPaused: () => true,
+      safeWrite: (t, data) => { t.write(data); return true; },
+    };
+    const msg = {
+      id: 1, sender: "system", text: "@head Queue check", type: "message", mentions: ["head"],
+    };
+    dispatchToAgentPTY("guard4", msg, sessions, deps);
+    assert.equal(written.length, 0, "dispatcher blocks PTY injection when guard is paused");
+    cleanupSession("guard4/head");
   });
 });
 
