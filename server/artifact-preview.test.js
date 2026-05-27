@@ -26,7 +26,7 @@ before(() => {
   fs.writeFileSync(path.join(TEST_DIR, "secret.txt"), "TOP SECRET");
 
   writeConfig({
-    port: 8400,
+    port: 8500,
     operator_name: "user",
     butler: { enabled: false, cwd: null, command: null },
     projects: [{

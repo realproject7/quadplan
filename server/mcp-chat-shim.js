@@ -124,7 +124,7 @@ async function handleMessage(msg) {
     return jsonRpc(id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "quadwork-chat", version: "1.0.0" },
+      serverInfo: { name: "quadplan-chat", version: "1.0.0" },
     });
   }
 

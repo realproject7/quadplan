@@ -86,7 +86,7 @@ This includes:
 
 ## Accessing the Dashboard
 
-QuadPlan runs on `http://127.0.0.1:8400` by default. WSL2 shares localhost with Windows automatically — open that URL in your Windows browser (Chrome, Edge, etc.) and it will connect.
+QuadPlan runs on `http://127.0.0.1:8500` by default. WSL2 shares localhost with Windows automatically — open that URL in your Windows browser (Chrome, Edge, etc.) and it will connect.
 
 ---
 

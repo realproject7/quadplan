@@ -14,7 +14,7 @@ const { runAcMigration } = require("./migrate-ac");
 
 const net = require("net");
 const config = readConfig();
-const PORT = config.port || 8400;
+const PORT = config.port || 8500;
 
 function emitSystemMessage(projectId, text) {
   try {
@@ -1062,7 +1062,7 @@ async function sendTriggerMessage(projectId) {
   // case where the operator is on a different page and the client-side
   // ScheduledTriggerWidget is not mounted to detect completion.
   if (project && project.trigger_auto) {
-    const qwPort = cfg.port || 8400;
+    const qwPort = cfg.port || 8500;
     try {
       const bpRes = await fetch(
         `http://127.0.0.1:${qwPort}/api/batch-progress?project=${encodeURIComponent(projectId)}`
@@ -1105,7 +1105,7 @@ async function sendTriggerMessage(projectId) {
   // saw the queue-check pulse. /api/chat opens the AC ws with the
   // session token and inherits the #230 token-resync-on-401 retry,
   // so the trigger now gets the same proven path as the chat panel.
-  const qwPort = cfg.port || 8400;
+  const qwPort = cfg.port || 8500;
   const url = `http://127.0.0.1:${qwPort}/api/chat?project=${encodeURIComponent(projectId)}`;
 
   const info = triggers.get(projectId);
@@ -1633,7 +1633,7 @@ async function autoStopPollingTick() {
     const hasTriggerAuto = project.trigger_auto && triggers.has(project.id);
     const hasBridgeAuto = project.telegram_auto || project.discord_auto;
     if (!hasTriggerAuto && !hasBridgeAuto) continue;
-    const qwPort = cfg.port || 8400;
+    const qwPort = cfg.port || 8500;
     try {
       const res = await fetch(
         `http://127.0.0.1:${qwPort}/api/batch-progress?project=${encodeURIComponent(project.id)}`

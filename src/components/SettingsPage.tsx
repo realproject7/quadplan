@@ -285,9 +285,9 @@ export default function SettingsPage() {
   const [cliStatus, setCliStatus] = useState<{ claude: boolean; codex: boolean } | null>(null);
   // #419 / quadwork#308: draft-string mirror for the dashboard port
   // field so the operator can clear it and retype without
-  // `parseInt("") || 8400` clobbering the buffer mid-keystroke.
+  // `parseInt("") || 8500` clobbering the buffer mid-keystroke.
   // Kept in sync with config.port on load + blur commit.
-  const [portDraft, setPortDraft] = useState<string>("8400");
+  const [portDraft, setPortDraft] = useState<string>("8500");
 
   const load = useCallback(() => {
     fetch("/api/config")
@@ -296,9 +296,9 @@ export default function SettingsPage() {
         return r.json();
       })
       .then((data) => {
-        setPortDraft(String(data.port || 8400));
+        setPortDraft(String(data.port || 8500));
         const cfg = {
-          port: data.port || 8400,
+          port: data.port || 8500,
           default_backend: data.default_backend || "claude",
           reviewer_github_user: data.reviewer_github_user || "",
           operator_name: data.operator_name || "user",
@@ -666,7 +666,7 @@ export default function SettingsPage() {
             onChange={(v) => setPortDraft(v)}
             onBlur={() => {
               const n = parseInt(portDraft, 10);
-              const clamped = Number.isFinite(n) && n > 0 && n <= 65535 ? n : 8400;
+              const clamped = Number.isFinite(n) && n > 0 && n <= 65535 ? n : 8500;
               updateGlobal("port", clamped);
               setPortDraft(String(clamped));
             }}

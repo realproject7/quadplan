@@ -41,7 +41,7 @@ describe("QuadPlan config schema", () => {
     const { readConfig, CONFIG_PATH } = freshConfig();
     try { fs.unlinkSync(CONFIG_PATH); } catch {}
     const config = readConfig();
-    assert.equal(config.port, 8400);
+    assert.equal(config.port, 8500);
     assert.equal(config.operator_name, "user");
     assert.ok(config.butler, "default config should include butler");
     assert.equal(config.butler.enabled, false);
@@ -54,7 +54,7 @@ describe("QuadPlan config schema", () => {
   it("writeConfig + readConfig round-trips QuadPlan config with butler", () => {
     const { readConfig, writeConfig, CONFIG_PATH } = freshConfig();
     const cfg = {
-      port: 8400,
+      port: 8500,
       operator_name: "user",
       butler: {
         enabled: true,
@@ -74,7 +74,7 @@ describe("QuadPlan config schema", () => {
   it("writeConfig + readConfig round-trips project with proposal_path, queue_path, artifact_dir", () => {
     const { readConfig, writeConfig, CONFIG_PATH } = freshConfig();
     const cfg = {
-      port: 8400,
+      port: 8500,
       operator_name: "user",
       butler: { enabled: false, cwd: null, command: null },
       projects: [
@@ -107,7 +107,7 @@ describe("QuadPlan config schema", () => {
   it("project config works without dev agent", () => {
     const { readConfig, writeConfig, resolveAgentCwd, CONFIG_PATH } = freshConfig();
     const cfg = {
-      port: 8400,
+      port: 8500,
       operator_name: "user",
       butler: { enabled: false, cwd: null, command: null },
       projects: [
@@ -133,7 +133,7 @@ describe("QuadPlan config schema", () => {
   it("no-dev project config: Object.keys(agents) returns exactly head/re1/re2", () => {
     const { readConfig, writeConfig, CONFIG_PATH } = freshConfig();
     const cfg = {
-      port: 8400,
+      port: 8500,
       operator_name: "user",
       butler: { enabled: false, cwd: null, command: null },
       projects: [
@@ -159,7 +159,7 @@ describe("QuadPlan config schema", () => {
   it("resolveButlerConfig returns butler settings", () => {
     const { writeConfig, resolveButlerConfig, CONFIG_PATH } = freshConfig();
     const cfg = {
-      port: 8400,
+      port: 8500,
       operator_name: "user",
       butler: { enabled: true, cwd: "/tmp/butler", command: "claude" },
       projects: [],
@@ -175,7 +175,7 @@ describe("QuadPlan config schema", () => {
   it("resolveButlerConfig returns defaults when butler is missing", () => {
     const { writeConfig, resolveButlerConfig, CONFIG_PATH } = freshConfig();
     fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
-    writeConfig({ port: 8400, operator_name: "user", projects: [] });
+    writeConfig({ port: 8500, operator_name: "user", projects: [] });
     const butler = resolveButlerConfig();
     assert.equal(butler.enabled, false);
     assert.equal(butler.cwd, null);
@@ -185,7 +185,7 @@ describe("QuadPlan config schema", () => {
   it("resolveProjectPaths returns project paths with queue_path fallback", () => {
     const { writeConfig, resolveProjectPaths, CONFIG_DIR, CONFIG_PATH } = freshConfig();
     const cfg = {
-      port: 8400,
+      port: 8500,
       operator_name: "user",
       butler: { enabled: false, cwd: null, command: null },
       projects: [

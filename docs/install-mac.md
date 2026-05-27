@@ -113,7 +113,7 @@ quadplan start
 
 You should see output like:
 ```
-QuadPlan dashboard: http://localhost:8400
+QuadPlan dashboard: http://localhost:8500
 ```
 
 Open the dashboard URL in your browser to access the web UI.
@@ -122,7 +122,7 @@ Open the dashboard URL in your browser to access the web UI.
 
 ## Create Your First Project
 
-1. Open the dashboard at `http://localhost:8400`
+1. Open the dashboard at `http://localhost:8500`
 2. Click **"+ New Project"** or navigate to `/setup`
 3. Fill in the project details:
    - **Name:** Your project name

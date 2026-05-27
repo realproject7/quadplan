@@ -13,7 +13,7 @@ npx quadplan init     # one-time setup
 npx quadplan start    # start the dashboard
 ```
 
-Open `http://localhost:8400` in your browser.
+Open `http://localhost:8500` in your browser.
 
 ## How It Works
 
@@ -77,6 +77,17 @@ Open `http://localhost:8400` in your browser.
 ## Planning Loop
 
 Sends periodic queue-check pulses to HEAD. Configurable intervals: 5, 10, 15, or 30 minutes. Default: 10 minutes. Loop guard prevents runaway agent chains.
+
+## Running Alongside QuadWork
+
+QuadPlan is designed to run **side-by-side** with [QuadWork](https://github.com/realproject7/quadwork). QuadPlan prepares proposals, tickets, and designs; QuadWork executes implementation. Both products can run on the same machine simultaneously with no conflicts.
+
+| | QuadPlan | QuadWork |
+|---|---|---|
+| Command | `quadplan` | `quadwork` |
+| Config dir | `~/.quadplan` | `~/.quadwork` |
+| Default port | `8500` | `8400` |
+| Agents | Butler / HEAD / RE1 / RE2 | HEAD / DEV / RE1 / RE2 |
 
 ## Visual Identity
 
