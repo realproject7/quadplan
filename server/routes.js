@@ -14,7 +14,7 @@ const fileChat = require("./file-chat");
 const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
 const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
-const { sendPlanningPulse } = require("./planning-loop-pulse");
+const { sendPlanningPulse, PLANNING_PULSE_MESSAGE } = require("./planning-loop-pulse");
 const { discoverArtifacts, readArtifactContent, isPathSafe, getAllowedRoots } = require("./artifact-preview");
 
 const router = express.Router();
@@ -1979,8 +1979,17 @@ router.post("/api/planning-loop/pulse", (req, res) => {
   if (!paths) return res.status(404).json({ error: "Unknown project" });
 
   const customMessage = req.body && req.body.message;
-  const result = sendPlanningPulse(projectId, customMessage, fileChat);
+  // Parity with /api/chat: normalize mentions before append
+  const message = normalizeMentions(customMessage || PLANNING_PULSE_MESSAGE);
+  const result = sendPlanningPulse(projectId, message, fileChat);
   if (!result.ok) return res.status(500).json(result);
+  // Loop guard intentionally skipped at route level: pulses are system
+  // infrastructure, not agent-to-agent chat, so they must not increment the
+  // hop counter. The message is always appended to file-chat, and the
+  // dispatch callback is always invoked; dispatchToAgentPTY's own
+  // isLoopGuardPaused check suppresses PTY injection when the guard is
+  // paused. The timer path additionally checks isLoopGuardPaused before
+  // calling sendPlanningPulse at all.
   if (_ptyDispatchCallback && result.record) _ptyDispatchCallback(projectId, result.record);
   const now = Date.now();
   _planningLoopLastPulse.set(projectId, now);
@@ -2012,7 +2021,7 @@ router.post("/api/planning-loop/start", (req, res) => {
       if (info) { info.guardPaused = true; info.nextPulse = Date.now() + intervalMs; }
       return;
     }
-    const result = sendPlanningPulse(projectId, null, fileChat);
+    const result = sendPlanningPulse(projectId, normalizeMentions(PLANNING_PULSE_MESSAGE), fileChat);
     if (_ptyDispatchCallback && result.ok && result.record) _ptyDispatchCallback(projectId, result.record);
     const now = Date.now();
     _planningLoopLastPulse.set(projectId, now);
