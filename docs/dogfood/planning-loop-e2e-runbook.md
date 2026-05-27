@@ -152,7 +152,7 @@ Dashboard opens at `http://127.0.0.1:8500`.
 3. Verify each agent terminal shows a real `claude` or `codex` session
 4. Enable **Planning Loop** from the control bar (10-minute interval recommended)
 5. Wait for the first pulse — HEAD should receive a queue-check message
-6. Observe HEAD processing the artifacts (TICKETS-1, DOC-1)
+6. Observe HEAD processing the artifacts (QP-001, QP-002)
 7. Observe RE1/RE2 reviewing HEAD's output
 8. Capture at least **two artifact status transitions** in the queue
 
