@@ -70,7 +70,7 @@ const COPY = {
 /**
  * "How to Work" modal (#229).
  *
- * Vertical-timeline explanation of the 4-agent workflow. Accessible
+ * Vertical-timeline explanation of the 3-agent planning workflow. Accessible
  * from both empty states (HomeEmptyState + ProjectChatEmptyState).
  * Closes on Escape, backdrop click, or the X button.
  */

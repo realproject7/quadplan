@@ -852,7 +852,7 @@ export default function SetupWizard() {
                     className="accent-accent"
                   />
                   <span className="text-[11px] text-text-muted">
-                    Configure reviewer credentials (for GitHub PR reviews)
+                    Configure reviewer credentials (for GitHub reviews)
                   </span>
                 </label>
 
