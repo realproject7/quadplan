@@ -980,10 +980,10 @@ ALL: Communicate via this chat by tagging agents. Your terminal is NOT visible.`
 // Discord bridges so they respond to batch transitions even when the
 // operator is on a different project page.
 
-async function autoStopBridges(projectId, project, qwPort) {
+async function autoStopBridges(projectId, project, qpPort) {
   if (project?.telegram_auto) {
     try {
-      await fetch(`http://127.0.0.1:${qwPort}/api/telegram?action=stop`, {
+      await fetch(`http://127.0.0.1:${qpPort}/api/telegram?action=stop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_id: projectId }),
@@ -994,7 +994,7 @@ async function autoStopBridges(projectId, project, qwPort) {
   }
   if (project?.discord_auto) {
     try {
-      await fetch(`http://127.0.0.1:${qwPort}/api/discord?action=stop`, {
+      await fetch(`http://127.0.0.1:${qpPort}/api/discord?action=stop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_id: projectId }),
@@ -1005,12 +1005,12 @@ async function autoStopBridges(projectId, project, qwPort) {
   }
 }
 
-async function autoStartBridges(projectId, project, qwPort) {
+async function autoStartBridges(projectId, project, qpPort) {
   if (project?.telegram_auto) {
     try {
       // Check if already running before starting
       const st = await fetch(
-        `http://127.0.0.1:${qwPort}/api/telegram?project=${encodeURIComponent(projectId)}`,
+        `http://127.0.0.1:${qpPort}/api/telegram?project=${encodeURIComponent(projectId)}`,
         { signal: AbortSignal.timeout(5000) }
       );
       if (st.ok) {
@@ -1018,7 +1018,7 @@ async function autoStartBridges(projectId, project, qwPort) {
         if (data.running) return; // already running
         if (!data.configured) return; // not configured — can't start
       }
-      await fetch(`http://127.0.0.1:${qwPort}/api/telegram?action=start`, {
+      await fetch(`http://127.0.0.1:${qpPort}/api/telegram?action=start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_id: projectId }),
@@ -1030,7 +1030,7 @@ async function autoStartBridges(projectId, project, qwPort) {
   if (project?.discord_auto) {
     try {
       const st = await fetch(
-        `http://127.0.0.1:${qwPort}/api/discord?project=${encodeURIComponent(projectId)}`,
+        `http://127.0.0.1:${qpPort}/api/discord?project=${encodeURIComponent(projectId)}`,
         { signal: AbortSignal.timeout(5000) }
       );
       if (st.ok) {
@@ -1038,7 +1038,7 @@ async function autoStartBridges(projectId, project, qwPort) {
         if (data.running) return;
         if (!data.configured) return;
       }
-      await fetch(`http://127.0.0.1:${qwPort}/api/discord?action=start`, {
+      await fetch(`http://127.0.0.1:${qpPort}/api/discord?action=start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_id: projectId }),
@@ -1062,10 +1062,10 @@ async function sendTriggerMessage(projectId) {
   // case where the operator is on a different page and the client-side
   // ScheduledTriggerWidget is not mounted to detect completion.
   if (project && project.trigger_auto) {
-    const qwPort = cfg.port || 8500;
+    const qpPort = cfg.port || 8500;
     try {
       const bpRes = await fetch(
-        `http://127.0.0.1:${qwPort}/api/batch-progress?project=${encodeURIComponent(projectId)}`
+        `http://127.0.0.1:${qpPort}/api/batch-progress?project=${encodeURIComponent(projectId)}`
       );
       if (bpRes.ok) {
         const bp = await bpRes.json();
@@ -1085,7 +1085,7 @@ async function sendTriggerMessage(projectId) {
           const prev = _bridgeBatchPrev.get(projectId);
           _bridgeBatchPrev.set(projectId, { complete: true, hasItems: !!(bp.items && bp.items.length) });
           if (!prev || !prev.complete) {
-            await autoStopBridges(projectId, project, qwPort);
+            await autoStopBridges(projectId, project, qpPort);
           }
           return;
         }
@@ -1105,8 +1105,8 @@ async function sendTriggerMessage(projectId) {
   // saw the queue-check pulse. /api/chat opens the AC ws with the
   // session token and inherits the #230 token-resync-on-401 retry,
   // so the trigger now gets the same proven path as the chat panel.
-  const qwPort = cfg.port || 8500;
-  const url = `http://127.0.0.1:${qwPort}/api/chat?project=${encodeURIComponent(projectId)}`;
+  const qpPort = cfg.port || 8500;
+  const url = `http://127.0.0.1:${qpPort}/api/chat?project=${encodeURIComponent(projectId)}`;
 
   const info = triggers.get(projectId);
   try {
@@ -1633,10 +1633,10 @@ async function autoStopPollingTick() {
     const hasTriggerAuto = project.trigger_auto && triggers.has(project.id);
     const hasBridgeAuto = project.telegram_auto || project.discord_auto;
     if (!hasTriggerAuto && !hasBridgeAuto) continue;
-    const qwPort = cfg.port || 8500;
+    const qpPort = cfg.port || 8500;
     try {
       const res = await fetch(
-        `http://127.0.0.1:${qwPort}/api/batch-progress?project=${encodeURIComponent(project.id)}`
+        `http://127.0.0.1:${qpPort}/api/batch-progress?project=${encodeURIComponent(project.id)}`
       );
       if (!res.ok) continue;
       const bp = await res.json();
@@ -1657,7 +1657,7 @@ async function autoStopPollingTick() {
         // #518: also stop bridges when batch completes
         // #542: only fire on the transition (incomplete→complete), not every tick
         if (hasBridgeAuto && (!prev || !prev.complete)) {
-          await autoStopBridges(project.id, project, qwPort);
+          await autoStopBridges(project.id, project, qpPort);
         }
       }
 
@@ -1665,7 +1665,7 @@ async function autoStopPollingTick() {
       if (hasBridgeAuto && hasItems && !bp.complete) {
         const isNewBatch = !prev || prev.complete || !prev.hasItems;
         if (isNewBatch) {
-          await autoStartBridges(project.id, project, qwPort);
+          await autoStartBridges(project.id, project, qpPort);
         }
       }
     } catch {

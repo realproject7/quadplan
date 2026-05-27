@@ -915,12 +915,12 @@ function cmdStop() {
 
   if (stopPid("Server", "server.pid")) stopped++;
 
-  // Stop caffeinate via the running server's API (targets only QuadWork's instance)
+  // Stop caffeinate via the running server's API
   if (process.platform === "darwin") {
     const cfg = readConfig();
-    const qwPort = cfg.port || 8500;
+    const qpPort = cfg.port || 8500;
     try {
-      const result = run("curl", ["-s", "-X", "POST", `http://127.0.0.1:${qwPort}/api/caffeinate/stop`]);
+      const result = run("curl", ["-s", "-X", "POST", `http://127.0.0.1:${qpPort}/api/caffeinate/stop`]);
       if (result && result.includes('"ok":true')) {
         ok("Stopped caffeinate (sleep prevention)");
         stopped++;
