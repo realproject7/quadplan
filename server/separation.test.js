@@ -39,6 +39,16 @@ describe("QuadPlan / QuadWork side-by-side separation", () => {
     assert.match(pkg.bin.quadplan, /quadplan\.js$/);
   });
 
+  it("package-lock.json bin metadata matches package.json (no quadwork)", () => {
+    const lock = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "..", "package-lock.json"), "utf-8")
+    );
+    const rootPkg = lock.packages[""];
+    assert.ok(rootPkg.bin.quadplan, "lockfile must expose quadplan command");
+    assert.equal(rootPkg.bin.quadwork, undefined, "lockfile must NOT expose quadwork command");
+    assert.match(rootPkg.bin.quadplan, /quadplan\.js$/, "lockfile bin must point to quadplan.js");
+  });
+
   it("CLI entry point file exists at bin/quadplan.js", () => {
     const entry = path.join(__dirname, "..", "bin", "quadplan.js");
     assert.ok(fs.existsSync(entry), "bin/quadplan.js must exist");
