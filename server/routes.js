@@ -1550,6 +1550,16 @@ function resolveDisplayedBatch(queueText, projectId, { queueReadOk = true } = {}
   // manually.
   if (!queueReadOk) return { batchNumber: null, issueNumbers: [] };
   const current = parseActiveBatch(queueText);
+
+  // #99: If Active Batch is explicitly empty, return empty immediately
+  // and purge any stale snapshot so the UI shows "no active batch"
+  // instead of a completed batch from the cache.
+  if (current.issueNumbers.length === 0) {
+    deleteBatchSnapshot(projectId);
+    _batchProgressCache.delete(projectId);
+    return { batchNumber: current.batchNumber, issueNumbers: [] };
+  }
+
   const snapshot = readBatchSnapshot(projectId);
   const hasExplicitBump =
     current.batchNumber !== null &&
@@ -3034,6 +3044,11 @@ module.exports.setPtyDispatchCallback = setPtyDispatchCallback;
 module.exports.seedProjectWorkspace = seedProjectWorkspace;
 module.exports.seedProjectRuntime = seedProjectRuntime;
 module.exports.PROJECT_AGENTS = PROJECT_AGENTS;
+// #99: expose batch snapshot helpers for stale-cache invalidation tests.
+module.exports.resolveDisplayedBatch = resolveDisplayedBatch;
+module.exports.writeBatchSnapshot = writeBatchSnapshot;
+module.exports.readBatchSnapshot = readBatchSnapshot;
+module.exports.batchSnapshotPath = batchSnapshotPath;
 module.exports._testCleanup = function () {
   for (const [, info] of _planningLoopTimers) {
     if (info.timer) clearInterval(info.timer);
