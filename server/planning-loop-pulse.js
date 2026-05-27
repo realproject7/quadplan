@@ -3,13 +3,13 @@ const PLANNING_PULSE_MESSAGE = `@head Queue check. Continue the next QuadPlan pl
 function sendPlanningPulse(projectId, customMessage, fileChat) {
   const message = customMessage || PLANNING_PULSE_MESSAGE;
   try {
-    fileChat.appendMessage(projectId, {
+    const record = fileChat.appendMessage(projectId, {
       sender: "system",
       channel: "general",
       type: "message",
       text: message,
     }, true);
-    return { ok: true, message };
+    return { ok: true, message, record };
   } catch (err) {
     return { ok: false, error: err.message || "Failed to send pulse" };
   }

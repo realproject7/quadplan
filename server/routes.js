@@ -1981,6 +1981,7 @@ router.post("/api/planning-loop/pulse", (req, res) => {
   const customMessage = req.body && req.body.message;
   const result = sendPlanningPulse(projectId, customMessage, fileChat);
   if (!result.ok) return res.status(500).json(result);
+  if (_ptyDispatchCallback && result.record) _ptyDispatchCallback(projectId, result.record);
   const now = Date.now();
   _planningLoopLastPulse.set(projectId, now);
   const info = _planningLoopTimers.get(projectId);
@@ -2011,7 +2012,8 @@ router.post("/api/planning-loop/start", (req, res) => {
       if (info) { info.guardPaused = true; info.nextPulse = Date.now() + intervalMs; }
       return;
     }
-    sendPlanningPulse(projectId, null, fileChat);
+    const result = sendPlanningPulse(projectId, null, fileChat);
+    if (_ptyDispatchCallback && result.ok && result.record) _ptyDispatchCallback(projectId, result.record);
     const now = Date.now();
     _planningLoopLastPulse.set(projectId, now);
     const info = _planningLoopTimers.get(projectId);

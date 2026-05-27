@@ -17,7 +17,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node server/",
-    "test": "node --test server/config.test.js server/planning-queue.test.js server/planning-loop.test.js server/planning-loop-pulse.test.js server/artifact-preview.test.js server/file-chat.test.js server/file-chat.loopguard.test.js server/file-chat.system-messages.test.js server/ac-restore.test.js server/migrate-ac.test.js server/pty-dispatcher.test.js server/__tests__/scrub-secrets.test.js server/bridges/bridges.test.js server/routes.seedWorkspace.test.js server/routes.planningProgress.test.js server/routes.parseActiveBatch.test.js server/routes.batchProgress.test.js server/separation.test.js server/routes.staleBatchCache.test.js",
+    "test": "node --test server/config.test.js server/planning-queue.test.js server/planning-loop.test.js server/planning-loop-pulse.test.js server/artifact-preview.test.js server/file-chat.test.js server/file-chat.loopguard.test.js server/file-chat.system-messages.test.js server/ac-restore.test.js server/migrate-ac.test.js server/pty-dispatcher.test.js server/__tests__/scrub-secrets.test.js server/bridges/bridges.test.js server/routes.seedWorkspace.test.js server/routes.planningProgress.test.js server/routes.parseActiveBatch.test.js server/routes.batchProgress.test.js server/routes.planningLoopDispatch.test.js server/separation.test.js server/routes.staleBatchCache.test.js",
     "lint": "eslint",
     "server": "node server/",
     "prepack": "npm run build",
