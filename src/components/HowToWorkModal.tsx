@@ -25,7 +25,7 @@ const COPY = {
       },
       {
         title: "HEAD creates the artifact",
-        body: "HEAD drafts the proposal, tickets, design, or document and opens a pull request.",
+        body: "HEAD drafts the proposal, tickets, design, or document and requests review from RE1 and RE2.",
       },
       {
         title: "Reviewers check the work",
@@ -53,7 +53,7 @@ const COPY = {
       },
       {
         title: "HEAD가 산출물을 작성합니다",
-        body: "HEAD가 제안서, 티켓, 디자인, 또는 문서를 작성하고 풀 리퀘스트를 엽니다.",
+        body: "HEAD가 제안서, 티켓, 디자인, 또는 문서를 작성하고 RE1과 RE2에게 리뷰를 요청합니다.",
       },
       {
         title: "리뷰어가 작업을 검토합니다",

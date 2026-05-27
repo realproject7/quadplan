@@ -498,7 +498,7 @@ async function setupAgents(rl, repo) {
     const cliName = hasClaude ? "Claude Code" : "Codex CLI";
     const otherName = hasClaude ? "Codex CLI" : "Claude Code";
     const installCmd = hasClaude ? "npm install -g @openai/codex" : "npm install -g @anthropic-ai/claude-code";
-    ok(`${cliName} detected — all 4 agents will use ${cliName}.`);
+    ok(`${cliName} detected — all planning agents will use ${cliName}.`);
     console.log("");
     log(`Tip: Installing ${otherName} too gives your team different AI perspectives,`);
     log(`which can improve code review quality. You can add it anytime:`);
@@ -553,7 +553,7 @@ async function setupAgents(rl, repo) {
   let reviewerUser = "";
   let reviewerTokenPath = "";
   if (wantReviewer) {
-    log("GitHub username for the reviewer account (used in RE1/RE2 seed files for PR reviews).");
+    log("GitHub username for the reviewer account (used in RE1/RE2 seed files for reviews).");
     reviewerUser = await ask(rl, "Reviewer GitHub username", "");
     log("Path to a file containing a GitHub PAT for the reviewer account.");
     reviewerTokenPath = await ask(rl, "Reviewer token file path", path.join(CONFIG_DIR, "reviewer-token"));
