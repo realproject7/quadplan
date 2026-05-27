@@ -29,13 +29,13 @@ const COPY = {
     chatLabel: "Agent Primary Chat",
     chatTooltip: (
       <>
-        <b>Primary Chat</b> — live chat between you and the 4 AI agents. Messages you type here trigger agent actions. Use @mentions to address specific agents.
+        <b>Primary Chat</b> — live chat between you and the planning agents (HEAD, RE1, RE2). Messages you type here trigger agent actions. Use @mentions to address specific agents.
       </>
     ),
     githubLabel: "GitHub",
     githubTooltip: (
       <>
-        <b>GitHub</b> — open issues and pull requests on this project&apos;s repo. Click any item to open it on GitHub. The batch progress panel tracks the active batch&apos;s lifecycle from queued to merged.
+        <b>GitHub</b> — open issues on this project&apos;s repo. Click any item to open it on GitHub. The batch progress panel tracks planning artifacts from queued to done.
       </>
     ),
   },
@@ -47,13 +47,13 @@ const COPY = {
     chatLabel: "에이전트 메인 채팅",
     chatTooltip: (
       <>
-        <b>메인 채팅</b> - 당신과 4개의 AI 에이전트가 실시간으로 대화하는 공간입니다. 여기 입력한 메시지가 에이전트 동작을 시작시킵니다. 특정 에이전트를 부를 때는 @멘션을 사용하세요.
+        <b>메인 채팅</b> — 당신과 기획 에이전트(HEAD, RE1, RE2)가 실시간으로 대화하는 공간입니다. 여기 입력한 메시지가 에이전트 동작을 시작시킵니다. 특정 에이전트를 부를 때는 @멘션을 사용하세요.
       </>
     ),
     githubLabel: "GitHub",
     githubTooltip: (
       <>
-        <b>GitHub</b> - 이 프로젝트 저장소의 열린 이슈와 PR을 보여줍니다. 항목을 클릭하면 GitHub에서 바로 열립니다. 아래 배치 진행 패널은 현재 배치가 대기에서 병합까지 어떻게 진행되는지 추적합니다.
+        <b>GitHub</b> — 이 프로젝트 저장소의 열린 이슈를 보여줍니다. 항목을 클릭하면 GitHub에서 바로 열립니다. 아래 배치 진행 패널은 기획 산출물을 대기에서 완료까지 추적합니다.
       </>
     ),
   },

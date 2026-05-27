@@ -132,7 +132,7 @@ Open the dashboard URL in your browser to access the web UI.
 4. Click **Create**
 
 QuadPlan will:
-- Create worktree directories for each agent (e.g., `project-head/`, `project-dev/`, `project-re1/`, `project-re2/`)
+- Create worktree directories for each agent (e.g., `project-head/`, `project-re1/`, `project-re2/`)
 - Seed AGENTS.md files for each role
 
 ---
@@ -146,7 +146,6 @@ On first launch, Claude Code agents may get stuck at a "Do you trust this direct
 ```bash
 # Run in each worktree directory
 cd /path/to/project-head && claude -p "echo ok"
-cd /path/to/project-dev && claude -p "echo ok"
 cd /path/to/project-re1 && claude -p "echo ok"
 cd /path/to/project-re2 && claude -p "echo ok"
 ```

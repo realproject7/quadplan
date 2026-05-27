@@ -46,10 +46,9 @@ interface Config {
 }
 
 const DEFAULT_AGENTS: Record<string, AgentConfig> = {
-  head: { display_name: "Head", command: "claude", cwd: "", model: "opus", agents_md: "" },
+  head: { display_name: "HEAD", command: "claude", cwd: "", model: "opus", agents_md: "" },
   re1: { display_name: "RE1", command: "claude", cwd: "", model: "sonnet", agents_md: "" },
   re2: { display_name: "RE2", command: "claude", cwd: "", model: "sonnet", agents_md: "" },
-  dev: { display_name: "Dev", command: "claude", cwd: "", model: "sonnet", agents_md: "" },
 };
 
 const BACKENDS: { value: string; label: string }[] = [
@@ -88,7 +87,7 @@ const COPY = {
     notConfigured: "Not configured",
     pasteNewToken: "Paste new token",
     defaultsHelp:
-      "The default CLI seeds new project agents. The reviewer GitHub user/token are used by RE1/RE2 to post PR review comments without your personal token. The token is written to ~/.quadplan/reviewer-token (mode 0600) and is never returned by the API.",
+      "The default CLI seeds new project agents. The reviewer GitHub user/token are used by RE1/RE2 to post review comments without your personal token. The token is written to ~/.quadplan/reviewer-token (mode 0600) and is never returned by the API.",
     system: "System",
     keepAwake: "Keep Awake",
     on: "on",
