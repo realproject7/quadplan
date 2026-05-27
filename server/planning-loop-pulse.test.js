@@ -34,6 +34,9 @@ describe("sendPlanningPulse", () => {
 
     assert.equal(result.ok, true);
     assert.equal(result.message, PLANNING_PULSE_MESSAGE);
+    assert.equal(result.record.sender, "system");
+    assert.equal(result.record.type, "message");
+    assert.deepEqual(result.record.mentions, ["head"]);
 
     const messages = fileChat.readMessages("pulsetest", { limit: 10 });
     assert.ok(messages.length >= 1);
