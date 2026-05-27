@@ -191,44 +191,51 @@ describe("pulse loop guard behavior", () => {
       "pulses do not trigger loop guard pause");
   });
 
-  it("timer path respects isLoopGuardPaused and skips sending", async () => {
-    const { server, routes, dispatched } = await createServer("guard2");
-    try {
-      const { port } = server.address();
-      const fileChat = require("./file-chat");
+  it("timer callback skips pulse append and PTY dispatch when guard is paused", () => {
+    const fileChat = setupProject("guard2");
+    const { sendPlanningPulse, PLANNING_PULSE_MESSAGE } = require("./planning-loop-pulse");
 
-      // Trigger loop guard pause by sending enough agent messages
-      const maxHops = 5;
-      for (let i = 0; i < maxHops; i++) {
-        const msg = fileChat.appendMessage("guard2", {
-          sender: "head", text: `msg ${i}`, channel: "general",
-        });
-        fileChat.checkLoopGuard("guard2", msg, maxHops);
-      }
-      assert.ok(fileChat.isLoopGuardPaused("guard2"), "guard is paused");
+    const dispatched = [];
+    const msgCountBefore = fileChat.readMessages("guard2", { limit: 100 }).length;
 
-      // Start loop timer with short interval
-      const startRes = await fetch(`http://127.0.0.1:${port}/api/planning-loop/start?project=guard2`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intervalMin: 0.01 }),
+    // Simulate the timer callback logic from routes.js /api/planning-loop/start
+    // The actual timer callback does:
+    //   if (fileChat.isLoopGuardPaused(projectId)) { return; }
+    //   const result = sendPlanningPulse(...);
+    //   if (callback && result.ok) callback(projectId, result.record);
+    const timerCallback = () => {
+      if (fileChat.isLoopGuardPaused("guard2")) return;
+      const result = sendPlanningPulse("guard2", PLANNING_PULSE_MESSAGE, fileChat);
+      if (result.ok && result.record) dispatched.push(result.record);
+    };
+
+    // Trigger loop guard pause
+    const maxHops = 3;
+    for (let i = 0; i < maxHops; i++) {
+      const msg = fileChat.appendMessage("guard2", {
+        sender: "head", text: `msg ${i}`, channel: "general",
       });
-      // 0.01 is not in SUPPORTED_INTERVALS, so it falls back to default (5 min).
-      // Instead, verify the timer was created and would check guard state.
-      // The guard-paused check happens inside the timer callback.
-      assert.equal(startRes.status, 200);
-
-      // Stop the timer to clean up
-      await fetch(`http://127.0.0.1:${port}/api/planning-loop/stop?project=guard2`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-    } finally {
-      await new Promise((r) => server.close(r));
-      routes.setPtyDispatchCallback(null);
-      if (typeof routes._testCleanup === "function") routes._testCleanup();
+      fileChat.checkLoopGuard("guard2", msg, maxHops);
     }
+    assert.ok(fileChat.isLoopGuardPaused("guard2"), "guard is paused");
+    const msgCountAfterPause = fileChat.readMessages("guard2", { limit: 100 }).length;
+
+    // Fire timer callback — should skip entirely
+    timerCallback();
+
+    const msgCountAfterTimer = fileChat.readMessages("guard2", { limit: 100 }).length;
+    assert.equal(dispatched.length, 0, "no PTY dispatch when guard is paused");
+    // Account for the system "Loop guard: paused" message that checkLoopGuard appends
+    assert.equal(msgCountAfterTimer, msgCountAfterPause,
+      "no pulse appended when guard is paused");
+
+    // Reset guard and verify timer fires normally
+    fileChat.resetLoopGuard("guard2");
+    timerCallback();
+    assert.equal(dispatched.length, 1, "pulse fires after guard reset");
+    assert.equal(msgCountAfterTimer + 1,
+      fileChat.readMessages("guard2", { limit: 100 }).length,
+      "pulse appended after guard reset");
   });
 
   it("manual pulse appends message when guard is paused but dispatcher suppresses PTY wake", async () => {
