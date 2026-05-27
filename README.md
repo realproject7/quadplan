@@ -13,7 +13,11 @@ npx quadplan init     # one-time setup
 npx quadplan start    # start the dashboard
 ```
 
-Open `http://localhost:8400` in your browser.
+Open `http://localhost:8500` in your browser.
+
+QuadPlan is designed to run side-by-side with QuadWork. QuadWork keeps the
+`quadwork` command, `~/.quadwork` runtime, and its usual `8400` port. QuadPlan
+uses the `quadplan` command, `~/.quadplan` runtime, and `8500` by default.
 
 ## How It Works
 

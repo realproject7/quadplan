@@ -41,7 +41,7 @@ describe("QuadPlan config schema", () => {
     const { readConfig, CONFIG_PATH } = freshConfig();
     try { fs.unlinkSync(CONFIG_PATH); } catch {}
     const config = readConfig();
-    assert.equal(config.port, 8400);
+    assert.equal(config.port, 8500);
     assert.equal(config.operator_name, "user");
     assert.ok(config.butler, "default config should include butler");
     assert.equal(config.butler.enabled, false);
@@ -49,6 +49,14 @@ describe("QuadPlan config schema", () => {
     assert.equal(config.butler.command, null);
     assert.ok(Array.isArray(config.projects));
     assert.equal(config.projects.length, 0);
+  });
+
+  it("uses a default port separate from QuadWork", () => {
+    const { readConfig, CONFIG_PATH } = freshConfig();
+    try { fs.unlinkSync(CONFIG_PATH); } catch {}
+    const config = readConfig();
+    assert.equal(config.port, 8500);
+    assert.notEqual(config.port, 8400);
   });
 
   it("writeConfig + readConfig round-trips QuadPlan config with butler", () => {

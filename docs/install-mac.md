@@ -113,7 +113,7 @@ quadplan start
 
 You should see output like:
 ```
-QuadPlan dashboard: http://localhost:8400
+QuadPlan dashboard: http://localhost:8500
 ```
 
 Open the dashboard URL in your browser to access the web UI.
@@ -122,7 +122,7 @@ Open the dashboard URL in your browser to access the web UI.
 
 ## Create Your First Project
 
-1. Open the dashboard at `http://localhost:8400`
+1. Open the dashboard at `http://localhost:8500`
 2. Click **"+ New Project"** or navigate to `/setup`
 3. Fill in the project details:
    - **Name:** Your project name
@@ -132,7 +132,7 @@ Open the dashboard URL in your browser to access the web UI.
 4. Click **Create**
 
 QuadPlan will:
-- Create worktree directories for each agent (e.g., `project-head/`, `project-dev/`, `project-re1/`, `project-re2/`)
+- Create worktree directories for each project agent (e.g., `project-head/`, `project-re1/`, `project-re2/`)
 - Seed AGENTS.md files for each role
 
 ---
@@ -146,7 +146,6 @@ On first launch, Claude Code agents may get stuck at a "Do you trust this direct
 ```bash
 # Run in each worktree directory
 cd /path/to/project-head && claude -p "echo ok"
-cd /path/to/project-dev && claude -p "echo ok"
 cd /path/to/project-re1 && claude -p "echo ok"
 cd /path/to/project-re2 && claude -p "echo ok"
 ```

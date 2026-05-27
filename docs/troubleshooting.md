@@ -13,7 +13,7 @@ Common issues and fixes, structured as **Symptom > Cause > Fix**. Searchable by 
 **Fix:** Pre-trust each worktree directory:
 
 ```bash
-cd /path/to/project-dev && claude -p "echo ok"
+cd /path/to/project-head && claude -p "echo ok"
 cd /path/to/project-head && claude -p "echo ok"
 cd /path/to/project-re1 && claude -p "echo ok"
 cd /path/to/project-re2 && claude -p "echo ok"
@@ -123,4 +123,3 @@ chmod 440 /etc/sudoers.d/quadplan
 ```
 
 See the [VPS Installation Guide](install-vps.md#step-2-create-non-root-user-critical) for full setup.
-

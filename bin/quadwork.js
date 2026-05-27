@@ -161,7 +161,7 @@ function readConfig() {
     const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
     return migrateAgentKeys(config);
   } catch {
-    return { port: 8400, projects: [] };
+    return { port: 8500, projects: [] };
   }
 }
 
@@ -498,7 +498,7 @@ async function setupAgents(rl, repo) {
     const cliName = hasClaude ? "Claude Code" : "Codex CLI";
     const otherName = hasClaude ? "Codex CLI" : "Claude Code";
     const installCmd = hasClaude ? "npm install -g @openai/codex" : "npm install -g @anthropic-ai/claude-code";
-    ok(`${cliName} detected — all 4 agents will use ${cliName}.`);
+    ok(`${cliName} detected — all 3 project agents will use ${cliName}.`);
     console.log("");
     log(`Tip: Installing ${otherName} too gives your team different AI perspectives,`);
     log(`which can improve code review quality. You can add it anytime:`);
@@ -786,11 +786,11 @@ async function cmdInit() {
 
     // Step 2: Dashboard port
     header("Step 2: Dashboard Port");
-    const port = await ask(rl, "Port for the QuadPlan dashboard (Enter for default)", "8400");
+    const port = await ask(rl, "Port for the QuadPlan dashboard (Enter for default)", "8500");
 
     // Write global config
     const config = readConfig();
-    config.port = parseInt(port, 10) || 8400;
+    config.port = parseInt(port, 10) || 8500;
     writeConfig(config);
     ok(`Wrote ${CONFIG_PATH}`);
 
@@ -833,7 +833,7 @@ async function cmdStart() {
   }
 
   const quadplanDir = path.join(__dirname, "..");
-  const port = config.port || 8400;
+  const port = config.port || 8500;
 
   // Check that the pre-built frontend exists
   const outDir = path.join(quadplanDir, "out");
@@ -915,10 +915,10 @@ function cmdStop() {
 
   if (stopPid("Server", "server.pid")) stopped++;
 
-  // Stop caffeinate via the running server's API (targets only QuadWork's instance)
+  // Stop caffeinate via the running server's API (targets only QuadPlan's instance)
   if (process.platform === "darwin") {
     const cfg = readConfig();
-    const qwPort = cfg.port || 8400;
+    const qwPort = cfg.port || 8500;
     try {
       const result = run("curl", ["-s", "-X", "POST", `http://127.0.0.1:${qwPort}/api/caffeinate/stop`]);
       if (result && result.includes('"ok":true')) {
