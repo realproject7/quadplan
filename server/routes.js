@@ -2067,20 +2067,6 @@ router.get("/api/batch-progress", async (req, res) => {
   const projectId = req.query.project;
   if (!projectId) return res.status(400).json({ error: "Missing project" });
 
-  const cached = _batchProgressCache.get(projectId);
-  const batchTTL = adaptiveTTL(BATCH_PROGRESS_TTL_MS);
-  if (cached && Date.now() - cached.ts < batchTTL) {
-    return res.json(cached.data);
-  }
-  // #554: if critically rate-limited, serve stale cache instead of
-  // firing N gh calls per batch item.
-  if (isRateLimited() && cached) {
-    return res.json({ ...cached.data, _stale: true, _rateLimited: true });
-  }
-
-  const repo = getRepo(projectId);
-  if (!repo) return res.status(400).json({ error: "No repo configured for project" });
-
   const queuePath = path.join(CONFIG_DIR, projectId, "OVERNIGHT-QUEUE.md");
   let queueText = "";
   let queueReadOk = false;
@@ -2092,6 +2078,27 @@ router.get("/api/batch-progress", async (req, res) => {
     // resolver bypasses the snapshot and returns the empty state
     // per #316's edge case.
   }
+
+  // #99: If Active Batch is empty, bypass the in-memory cache so
+  // stale rendered rows never override an explicitly empty queue.
+  const liveActiveBatch = parseActiveBatch(queueText);
+  const activeBatchEmpty = queueReadOk && liveActiveBatch.issueNumbers.length === 0;
+
+  if (!activeBatchEmpty) {
+    const cached = _batchProgressCache.get(projectId);
+    const batchTTL = adaptiveTTL(BATCH_PROGRESS_TTL_MS);
+    if (cached && Date.now() - cached.ts < batchTTL) {
+      return res.json(cached.data);
+    }
+    // #554: if critically rate-limited, serve stale cache instead of
+    // firing N gh calls per batch item.
+    if (isRateLimited() && cached) {
+      return res.json({ ...cached.data, _stale: true, _rateLimited: true });
+    }
+  }
+
+  const repo = getRepo(projectId);
+  if (!repo) return res.status(400).json({ error: "No repo configured for project" });
 
   // #334 / quadwork#334: validate the on-disk snapshot against
   // GitHub before resolveDisplayedBatch can serve it. A snapshot
