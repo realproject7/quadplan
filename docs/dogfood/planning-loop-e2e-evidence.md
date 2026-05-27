@@ -53,7 +53,7 @@
 
 | Field | Before | After |
 |-------|--------|-------|
-| Artifact | <!-- e.g., TICKETS-1 --> | |
+| Artifact | <!-- e.g., QP-001 --> | |
 | Status | <!-- e.g., queued --> | <!-- e.g., drafting --> |
 | Caused by | <!-- e.g., HEAD processing pulse #1 --> | |
 | Chat evidence | <!-- msg ID showing agent activity --> | |
@@ -62,7 +62,7 @@
 
 | Field | Before | After |
 |-------|--------|-------|
-| Artifact | <!-- e.g., DOC-1 --> | |
+| Artifact | <!-- e.g., QP-002 --> | |
 | Status | <!-- e.g., queued --> | <!-- e.g., ready_for_review --> |
 | Caused by | <!-- e.g., HEAD processing pulse #2 --> | |
 | Chat evidence | <!-- msg ID --> | |

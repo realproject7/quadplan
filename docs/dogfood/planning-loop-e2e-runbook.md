@@ -79,7 +79,7 @@ Edit `~/.quadplan/config.json`:
       "repo": "",
       "working_dir": "/tmp/quadplan-dogfood",
       "proposal_path": "/tmp/quadplan-dogfood/docs/PROPOSAL.md",
-      "queue_path": "~/.quadplan/dogfood-e2e/OVERNIGHT-QUEUE.md",
+      "queue_path": "/Users/cho/.quadplan/dogfood-e2e/OVERNIGHT-QUEUE.md",
       "artifact_dir": "/tmp/quadplan-dogfood/artifacts",
       "agents": {
         "head": {
@@ -115,8 +115,17 @@ Create `~/.quadplan/dogfood-e2e/OVERNIGHT-QUEUE.md`:
 
 **Batch:** 1
 
-- [ ] TICKETS-1 — Draft ticket batch for dogfood project (2 tickets covering proposal scope)
-- [ ] DOC-1 — Write a one-page design overview for the dogfood project
+### QP-001 — Draft ticket batch for dogfood project (2 tickets covering proposal scope)
+- Type: ticket_batch
+- Status: queued
+- Review: RE1 pending, RE2 pending
+- Output: artifacts/tickets/batch-1.md
+
+### QP-002 — Write a one-page design overview for the dogfood project
+- Type: doc
+- Status: queued
+- Review: RE1 pending, RE2 pending
+- Output: artifacts/docs/design-overview.md
 
 ## Backlog
 
