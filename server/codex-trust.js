@@ -46,23 +46,43 @@ function projectHeader(absDir) {
   return `[projects.${tomlPathKey(absDir)}]`;
 }
 
-// True when config text already declares a [projects."<absDir>"] table. We
-// match the header only (not trust_level) so we never append a duplicate
-// table for a path Codex already knows about — a duplicate key would make
-// the TOML invalid.
+// True when config text declares a [projects."<absDir>"] table (regardless
+// of its trust_level). Used to decide append-vs-edit so we never create a
+// duplicate table (which would make the TOML invalid).
 function isCodexProjectConfigured(configText, absDir) {
   if (typeof configText !== "string" || !configText) return false;
   return configText.includes(projectHeader(absDir));
 }
 
+// Locate the [projects."<dir>"] table block: from its header to the next
+// top-level header (a "[" at column 0) or EOF. Returns { start, end, block }
+// or null if absent.
+function findProjectBlock(text, absDir) {
+  const header = projectHeader(absDir);
+  const start = text.indexOf(header);
+  if (start === -1) return null;
+  const afterHeader = start + header.length;
+  const rel = text.slice(afterHeader).search(/\n\[/);
+  const end = rel === -1 ? text.length : afterHeader + rel + 1; // keep the newline
+  return { start, end, block: text.slice(start, end) };
+}
+
+// True only when the path's table exists AND its trust_level is "trusted".
+function isCodexTrusted(configText, absDir) {
+  if (typeof configText !== "string" || !configText) return false;
+  const found = findProjectBlock(configText, absDir);
+  if (!found) return false;
+  return /^\s*trust_level\s*=\s*"trusted"\s*$/m.test(found.block);
+}
+
 /**
- * Ensure `<dir>` is recorded as a trusted Codex project. Idempotent and
- * non-destructive — appends a new table only when the path is absent, so it
- * never clobbers or duplicates existing entries.
+ * Ensure `<dir>` is recorded as a *trusted* Codex project. Idempotent and
+ * non-destructive — only the path's own table is ever touched.
  *
  * Returns { action, path }:
- *   - "added"   — a trusted-project table was appended
- *   - "present" — the path was already declared; left untouched
+ *   - "added"   — no table existed; a trusted-project table was appended
+ *   - "updated" — the table existed but was not trusted; trust_level set/fixed
+ *   - "present" — the table already declared trust_level = "trusted"
  */
 function ensureCodexTrusted(dir, opts = {}) {
   const configPath = opts.configPath || codexConfigPath();
@@ -75,16 +95,34 @@ function ensureCodexTrusted(dir, opts = {}) {
     text = "";
   }
 
-  if (isCodexProjectConfigured(text, absDir)) {
+  const found = findProjectBlock(text, absDir);
+
+  if (!found) {
+    // No table for this path — append a fresh trusted one.
+    const sep = text === "" ? "" : text.endsWith("\n") ? "\n" : "\n\n";
+    const block = `${sep}${projectHeader(absDir)}\ntrust_level = "trusted"\n`;
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.appendFileSync(configPath, block);
+    return { action: "added", path: configPath };
+  }
+
+  if (/^\s*trust_level\s*=\s*"trusted"\s*$/m.test(found.block)) {
     return { action: "present", path: configPath };
   }
 
-  const sep = text === "" ? "" : text.endsWith("\n") ? "\n" : "\n\n";
-  const block = `${sep}${projectHeader(absDir)}\ntrust_level = "trusted"\n`;
-
+  // Table exists but is not trusted: replace an existing trust_level line, or
+  // insert one right after the header. Only this block is rewritten.
+  let newBlock;
+  if (/^\s*trust_level\s*=.*$/m.test(found.block)) {
+    newBlock = found.block.replace(/^\s*trust_level\s*=.*$/m, 'trust_level = "trusted"');
+  } else {
+    const header = projectHeader(absDir);
+    newBlock = found.block.replace(header, `${header}\ntrust_level = "trusted"`);
+  }
+  const updated = text.slice(0, found.start) + newBlock + text.slice(found.end);
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
-  fs.appendFileSync(configPath, block);
-  return { action: "added", path: configPath };
+  fs.writeFileSync(configPath, updated);
+  return { action: "updated", path: configPath };
 }
 
 // --- Trust-gate detection (for surfacing a blocked state, not auto-answer) -
@@ -118,6 +156,7 @@ function detectsCodexTrustPrompt(text) {
 module.exports = {
   codexConfigPath,
   isCodexProjectConfigured,
+  isCodexTrusted,
   ensureCodexTrusted,
   detectsCodexTrustPrompt,
   // exposed for testing

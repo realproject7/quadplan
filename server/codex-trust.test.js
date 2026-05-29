@@ -11,6 +11,7 @@ const path = require("path");
 const {
   codexConfigPath,
   isCodexProjectConfigured,
+  isCodexTrusted,
   ensureCodexTrusted,
   detectsCodexTrustPrompt,
   _tomlPathKey,
@@ -86,6 +87,39 @@ test("tomlPathKey escapes quotes and backslashes", () => {
   assert.equal(_tomlPathKey("/a/b"), '"/a/b"');
   assert.equal(_tomlPathKey('/a/"q"'), '"/a/\\"q\\""');
   assert.equal(_tomlPathKey("C:\\proj"), '"C:\\\\proj"');
+});
+
+test("ensureCodexTrusted UPDATES an existing untrusted entry", () => {
+  const cfg = tmpConfig();
+  fs.writeFileSync(cfg, '[projects."/home/op/proj-head"]\ntrust_level = "untrusted"\n');
+  const r = ensureCodexTrusted("/home/op/proj-head", { configPath: cfg });
+  assert.equal(r.action, "updated");
+  const text = fs.readFileSync(cfg, "utf8");
+  assert.match(text, /trust_level = "trusted"/);
+  assert.ok(!/untrusted/.test(text), "old untrusted value should be gone");
+  // still exactly one table
+  assert.equal(text.split('[projects."/home/op/proj-head"]').length - 1, 1);
+  // a second call is now a no-op
+  assert.equal(ensureCodexTrusted("/home/op/proj-head", { configPath: cfg }).action, "present");
+});
+
+test("ensureCodexTrusted INSERTS trust_level when the table has none", () => {
+  const cfg = tmpConfig();
+  // table exists with some other key but no trust_level
+  fs.writeFileSync(cfg, '[projects."/home/op/p"]\nsome_other = 1\n\n[other]\nx = 2\n');
+  const r = ensureCodexTrusted("/home/op/p", { configPath: cfg });
+  assert.equal(r.action, "updated");
+  const text = fs.readFileSync(cfg, "utf8");
+  assert.match(text, /\[projects\."\/home\/op\/p"\]\ntrust_level = "trusted"\nsome_other = 1/);
+  // the unrelated [other] table is untouched
+  assert.match(text, /\[other\]\nx = 2/);
+});
+
+test("isCodexTrusted requires trust_level = trusted, not just the table", () => {
+  assert.equal(isCodexTrusted('[projects."/a"]\ntrust_level = "trusted"\n', "/a"), true);
+  assert.equal(isCodexTrusted('[projects."/a"]\ntrust_level = "untrusted"\n', "/a"), false);
+  assert.equal(isCodexTrusted('[projects."/a"]\nfoo = 1\n', "/a"), false);
+  assert.equal(isCodexTrusted("", "/a"), false);
 });
 
 test("isCodexProjectConfigured detects an existing path entry", () => {

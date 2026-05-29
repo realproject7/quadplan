@@ -65,6 +65,15 @@ function safeWrite(term, data) {
   }
 }
 
+// #111: input to an agent PTY answers/dismisses any pending directory-trust
+// gate, so clear the blocked flag immediately and forget the gate text so a
+// stale prompt in the tail can't re-trigger a block on the next output chunk.
+function clearAgentTrustBlock(session) {
+  if (!session) return;
+  session.trustBlocked = false;
+  session._trustTail = "";
+}
+
 // --- CLI status detection ---
 
 const { execFileSync } = require("child_process");
@@ -516,10 +525,14 @@ async function spawnAgentPty(project, agent, opts = {}) {
     // This runs independently of WS — even when no client is connected,
     // the buffer accumulates so the next connect gets replay.
     const SCROLLBACK_SIZE = 64 * 1024;
-    // #111: recompute the trust-gate block from the recent output tail on
-    // each chunk. Recomputing (rather than latching) lets it self-clear once
-    // the operator answers and Codex/Claude prints past the gate.
-    let trustTail = "";
+    // #111: recompute the trust-gate block from a SMALL recent-output tail on
+    // each chunk so it self-clears promptly once output scrolls past the gate.
+    // It is also cleared immediately when the operator answers (any input to
+    // the PTY — see the WS input + /write handlers), which resets the tail so
+    // a stale prompt can't re-trigger a block. The tail lives on the session
+    // so those handlers can reset it.
+    session._trustTail = "";
+    const TRUST_TAIL = 1500;
     term.onData((data) => {
       session.lastOutputAt = Date.now();
       const chunk = Buffer.from(data);
@@ -527,8 +540,8 @@ async function spawnAgentPty(project, agent, opts = {}) {
       if (session.scrollback.length > SCROLLBACK_SIZE) {
         session.scrollback = session.scrollback.slice(-SCROLLBACK_SIZE);
       }
-      trustTail = (trustTail + data).slice(-4096);
-      const blocked = detectsCodexTrustPrompt(trustTail) || detectsClaudeTrustPrompt(trustTail);
+      session._trustTail = (session._trustTail + data).slice(-TRUST_TAIL);
+      const blocked = detectsCodexTrustPrompt(session._trustTail) || detectsClaudeTrustPrompt(session._trustTail);
       if (blocked !== session.trustBlocked) {
         session.trustBlocked = blocked;
         if (blocked) console.log(`[agent] ${key} blocked at directory-trust gate — operator action needed`);
@@ -827,6 +840,7 @@ app.post("/api/agents/:project/:agent/write", (req, res) => {
   }
 
   try {
+    clearAgentTrustBlock(session); // #111: input answers any pending trust gate
     session.term.write(text);
     res.json({ ok: true });
   } catch (err) {
@@ -1574,6 +1588,7 @@ wss.on("connection:terminal", async (ws, req) => {
         return;
       }
     } catch {}
+    clearAgentTrustBlock(session); // #111: operator keystroke answers the gate
     safeWrite(session.term, str);
   });
 
