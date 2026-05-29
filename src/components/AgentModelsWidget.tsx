@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useState } from "react";
 import InfoTooltip from "./InfoTooltip";
 import { useLocale } from "@/components/LocaleProvider";
+import { MODEL_OPTIONS, optionsForBackend, withCustomOption } from "./modelRegistry";
 
 const COPY = {
   en: {
@@ -103,37 +104,10 @@ const REASONING_LEVELS = ["minimal", "low", "medium", "high"] as const;
 // ship with this release; operators who need something bleeding
 // edge can still override by editing ~/.quadplan/config.json
 // directly — this widget is the guided happy path.
-export const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
-  // #106: Codex slugs verified against the Codex CLI shipped in this
-  // environment (codex-cli 0.135.0) — gpt-5.5 is the newest surfaced in the
-  // local model-availability config, gpt-5.4 was the prior default, and
-  // gpt-5.3-codex is the Codex-tuned variant. Legacy gpt-5 / gpt-4o were
-  // dropped (not offered by the current CLI); a config that still names them
-  // keeps working — the dropdown shows it as a "(custom)" entry.
-  codex: [
-    { value: "", label: "(CLI default)" },
-    { value: "gpt-5.5", label: "gpt-5.5" },
-    { value: "gpt-5.4", label: "gpt-5.4" },
-    { value: "gpt-5.3-codex", label: "gpt-5.3-codex" },
-  ],
-  // #106: claude-opus-4-8 is the current top Claude model — listed first.
-  claude: [
-    { value: "", label: "(CLI default)" },
-    { value: "claude-opus-4-8", label: "claude-opus-4-8" },
-    { value: "claude-opus-4-7", label: "claude-opus-4-7" },
-    { value: "claude-opus-4-6", label: "claude-opus-4-6" },
-    { value: "claude-sonnet-4-6", label: "claude-sonnet-4-6" },
-    { value: "claude-haiku-4-5-20251001", label: "claude-haiku-4-5" },
-  ],
-  gemini: [
-    { value: "", label: "(CLI default)" },
-    { value: "gemini-2.5-pro", label: "gemini-2.5-pro" },
-    { value: "gemini-2.5-flash", label: "gemini-2.5-flash" },
-  ],
-};
-export function optionsForBackend(backend: string) {
-  return MODEL_OPTIONS[backend] || [{ value: "", label: "(CLI default)" }];
-}
+// #106: model dropdown options live in a shared, unit-tested registry so the
+// Agent Models widget and Butler settings stay in sync. Re-exported here for
+// existing importers (e.g. SettingsPage).
+export { MODEL_OPTIONS, optionsForBackend, withCustomOption };
 
 // #367: modal body — the full configuration UI from the original
 // AgentModelsWidget, unchanged except for being wrapped in a
@@ -278,15 +252,12 @@ function AgentModelsModal({ projectId, onClose }: { projectId: string; onClose: 
                 onChange={(e) => update(row.agent_id, { model: e.target.value })}
                 className="flex-1 min-w-[140px] bg-transparent border border-border px-1 py-0.5 text-[11px] font-mono text-text outline-none focus:border-accent cursor-pointer disabled:opacity-50"
               >
-                {optionsForBackend(row.backend).map((opt) => (
+                {/* withCustomOption keeps a persisted model selectable even
+                    when it isn't in the shipped list (e.g. operator hand-
+                    edited config.json) so the override doesn't vanish. */}
+                {withCustomOption(optionsForBackend(row.backend), row.model, t.custom).map((opt) => (
                   <option key={opt.value} value={opt.value} className="bg-bg-surface">{opt.label}</option>
                 ))}
-                {/* If the persisted model isn't in the known list
-                    (e.g. operator hand-edited config.json), keep
-                    it selectable so their override doesn't vanish. */}
-                {row.model && !optionsForBackend(row.backend).some((o) => o.value === row.model) && (
-                  <option value={row.model} className="bg-bg-surface">{row.model} {t.custom}</option>
-                )}
               </select>
               {row.reasoning_supported ? (
                 <select
