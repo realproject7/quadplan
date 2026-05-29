@@ -36,7 +36,7 @@ const COPY = {
     restartTooltip: "Restart this agent to pick up the new model / reasoning setting",
     help: (
       <>
-        Codex reasoning effort defaults to <code className="text-text">medium</code> for new projects. Blank model falls back to the CLI default. Click Restart to apply changes to a live session.
+        Codex reasoning effort defaults to <code className="text-text">medium</code> for new projects — <code className="text-text">high</code> is left opt-in because high/xhigh is the provider capacity-failure hot spot. Claude effort isn&apos;t configurable here; Claude Code uses its own default. Blank model falls back to the CLI default. Click Restart to apply changes to a live session.
       </>
     ),
     summary: (id: string, backend: string) => (
@@ -64,7 +64,7 @@ const COPY = {
     restartTooltip: "에이전트를 재시작하여 새로운 모델/추론 설정을 적용합니다",
     help: (
       <>
-        Codex 추론 수준은 새 프로젝트의 경우 <code className="text-text">medium</code>으로 기본 설정됩니다. 모델을 비워두면 CLI 기본값이 사용됩니다. 변경 사항을 적용하려면 재시작을 클릭하세요.
+        Codex 추론 수준은 새 프로젝트의 경우 <code className="text-text">medium</code>으로 기본 설정됩니다 — high/xhigh는 제공자 용량 초과 오류의 주범이므로 <code className="text-text">high</code>는 선택 사항으로 둡니다. Claude 추론 수준은 여기서 설정할 수 없으며 Claude Code 기본값을 따릅니다. 모델을 비워두면 CLI 기본값이 사용됩니다. 변경 사항을 적용하려면 재시작을 클릭하세요.
       </>
     ),
     summary: (id: string, backend: string) => (
@@ -104,14 +104,22 @@ const REASONING_LEVELS = ["minimal", "low", "medium", "high"] as const;
 // edge can still override by editing ~/.quadplan/config.json
 // directly — this widget is the guided happy path.
 export const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  // #106: Codex slugs verified against the Codex CLI shipped in this
+  // environment (codex-cli 0.135.0) — gpt-5.5 is the newest surfaced in the
+  // local model-availability config, gpt-5.4 was the prior default, and
+  // gpt-5.3-codex is the Codex-tuned variant. Legacy gpt-5 / gpt-4o were
+  // dropped (not offered by the current CLI); a config that still names them
+  // keeps working — the dropdown shows it as a "(custom)" entry.
   codex: [
     { value: "", label: "(CLI default)" },
+    { value: "gpt-5.5", label: "gpt-5.5" },
     { value: "gpt-5.4", label: "gpt-5.4" },
-    { value: "gpt-5", label: "gpt-5" },
-    { value: "gpt-4o", label: "gpt-4o" },
+    { value: "gpt-5.3-codex", label: "gpt-5.3-codex" },
   ],
+  // #106: claude-opus-4-8 is the current top Claude model — listed first.
   claude: [
     { value: "", label: "(CLI default)" },
+    { value: "claude-opus-4-8", label: "claude-opus-4-8" },
     { value: "claude-opus-4-7", label: "claude-opus-4-7" },
     { value: "claude-opus-4-6", label: "claude-opus-4-6" },
     { value: "claude-sonnet-4-6", label: "claude-sonnet-4-6" },
