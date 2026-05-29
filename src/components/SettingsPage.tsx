@@ -136,7 +136,7 @@ const COPY = {
     butlerModel: "Model",
     butlerAutoStart: "Auto-start on boot",
     butlerCwd: "Working directory",
-    butlerHelp: "Butler is a cross-project operator assistant that runs in ~/docs/. It helps manage tickets, proposals, reviews, and releases across all projects.",
+    butlerHelp: "Butler is a cross-project operator assistant that runs in ~/.quadplan/butler. It helps manage tickets, proposals, reviews, and releases across all projects.",
     enable: "Enable",
     disable: "Disable",
     unsavedChanges: "Unsaved changes",
@@ -214,7 +214,7 @@ const COPY = {
     butlerModel: "모델",
     butlerAutoStart: "서버 시작 시 자동 실행",
     butlerCwd: "작업 디렉터리",
-    butlerHelp: "버틀러는 ~/docs/에서 실행되는 크로스 프로젝트 운영자 어시스턴트입니다. 모든 프로젝트의 티켓, 제안서, 리뷰, 릴리스 관리를 지원합니다.",
+    butlerHelp: "버틀러는 ~/.quadplan/butler에서 실행되는 크로스 프로젝트 운영자 어시스턴트입니다. 모든 프로젝트의 티켓, 제안서, 리뷰, 릴리스 관리를 지원합니다.",
     enable: "활성화",
     disable: "비활성화",
     unsavedChanges: "저장되지 않은 변경사항",
@@ -785,9 +785,9 @@ export default function SettingsPage() {
             />
             <Input
               label={t.butlerCwd}
-              value={config.butler?.cwd || "~/docs/"}
+              value={config.butler?.cwd || "~/.quadplan/butler"}
               onChange={(v) => updateButler({ cwd: v })}
-              placeholder="~/docs/"
+              placeholder="~/.quadplan/butler"
             />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
