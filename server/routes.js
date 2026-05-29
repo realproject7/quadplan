@@ -339,11 +339,19 @@ router.get("/api/chat", (req, res) => {
   const projectId = req.query.project;
   if (!projectId) return res.status(400).json({ error: "project required" });
 
+  // #109: mirror the POST readiness handling — an unknown project must
+  // return a JSON 404, not fall through to readMessages() (which would
+  // create an empty chat file and return 200 []). A configured project is
+  // initialized on demand so its cache is populated before reading.
+  const ready = ensureFileChatReady(projectId);
+  if (ready === "missing") {
+    return res.status(404).json({ error: `Unknown project: ${projectId}` });
+  }
+  if (ready === "error") {
+    return res.status(500).json({ error: `Could not initialize chat for project: ${projectId}` });
+  }
+
   try {
-    // Non-fatal: readMessages already falls back to disk for an
-    // uninitialized project, but initializing first populates the cache
-    // and shares the same code path as POST.
-    ensureFileChatReady(projectId);
     const sinceId = Number(req.query.since_id) || Number(req.query.cursor) || 0;
     const messages = fileChat.readMessages(projectId, {
       since_id: sinceId,

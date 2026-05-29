@@ -61,6 +61,7 @@ before(async () => {
     port: 8500,
     projects: [
       { id: "qp-dogfood", name: "Dogfood", repo: "owner/repo", chat_mode: "file" },
+      { id: "qp-getinit", name: "GetInit", repo: "owner/getinit", chat_mode: "file" },
     ],
   });
 
@@ -115,6 +116,23 @@ describe("#109 on-demand file-chat init", () => {
     // and on disk
     const file = path.join(TEST_DIR, ".quadplan", "qp-dogfood", "chat", "general.jsonl");
     assert.ok(fs.existsSync(file), "chat jsonl should exist on disk");
+  });
+
+  it("GET /api/chat initializes a configured-but-uninitialized project", async () => {
+    assert.equal(fileChat.isInitialized("qp-getinit"), false);
+    const res = await request("GET", "/api/chat?project=qp-getinit&limit=10");
+    assert.equal(res.status, 200, res.raw);
+    assert.deepEqual(res.json, []);
+    assert.equal(fileChat.isInitialized("qp-getinit"), true);
+  });
+
+  it("GET /api/chat returns JSON 404 for an unknown project (no file created)", async () => {
+    const res = await request("GET", "/api/chat?project=ghost-get&limit=10");
+    assert.equal(res.status, 404);
+    assert.match(res.json.error, /Unknown project/);
+    // must NOT have created a chat file for the unknown project
+    const file = path.join(TEST_DIR, ".quadplan", "ghost-get", "chat", "general.jsonl");
+    assert.ok(!fs.existsSync(file), "GET must not create a file for an unknown project");
   });
 
   it("POST /api/chat returns JSON 404 for an unknown project (not HTML)", async () => {
