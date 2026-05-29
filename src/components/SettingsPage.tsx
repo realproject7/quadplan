@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/LocaleProvider";
-import { MODEL_OPTIONS, optionsForBackend } from "./AgentModelsWidget";
+import { MODEL_OPTIONS, optionsForBackend, withCustomOption } from "./AgentModelsWidget";
 
 interface AgentConfig {
   display_name: string;
@@ -781,7 +781,13 @@ export default function SettingsPage() {
               label={t.butlerModel}
               value={config.butler?.model || "opus"}
               onChange={(v) => updateButler({ model: v })}
-              options={butlerModelsForBackend(config.butler?.command || "claude")}
+              // #106: keep the persisted Butler model (e.g. the "opus" alias
+              // default or a hand-edited slug) selectable even if it isn't in
+              // the shipped list, so existing Butler configs don't lose it.
+              options={withCustomOption(
+                butlerModelsForBackend(config.butler?.command || "claude"),
+                config.butler?.model || "opus",
+              )}
             />
             <Input
               label={t.butlerCwd}
