@@ -14,7 +14,9 @@ import { useLocale } from "@/components/LocaleProvider";
 const MIN_SIZE = 150; // px
 const DIVIDER = 4; // px
 
-type AgentState = "running" | "stopped" | "error";
+// #111: "blocked" = PTY is running but waiting at a directory-trust gate,
+// so the agent is NOT yet usable. Surfaced distinctly from "running".
+type AgentState = "running" | "stopped" | "error" | "blocked";
 
 interface ProjectDashboardProps {
   projectId: string;
@@ -136,7 +138,9 @@ export default function ProjectDashboard({ projectId }: ProjectDashboardProps) {
           for (const [key, info] of Object.entries(data)) {
             if (key.startsWith(`${projectId}/`)) {
               const agent = key.split("/")[1];
-              states[agent] = (info as { state: string }).state as AgentState;
+              const i = info as { state: string; blocked?: string | null };
+              // #111: a running agent stuck at a trust gate reads as "blocked"
+              states[agent] = i.blocked ? "blocked" : (i.state as AgentState);
             }
           }
           setAgentStates(states);

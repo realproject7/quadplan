@@ -37,7 +37,7 @@ const PLANNING_AGENTS = [
   { id: "re2", label: "RE2" },
 ];
 
-type AgentState = "running" | "stopped" | "error";
+type AgentState = "running" | "stopped" | "error" | "blocked";
 
 interface AgentTerminalsGridProps {
   projectId: string;

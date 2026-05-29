@@ -142,12 +142,18 @@ export default function TerminalGrid({
                     agent is running — pulsing ring around the dot
                     signals "agent is working". Idle/stopped/error
                     states omit the ring. */}
-                <span className="relative inline-flex items-center justify-center w-2 h-2">
+                <span
+                  className="relative inline-flex items-center justify-center w-2 h-2"
+                  title={agentStates[agent.id] === "blocked"
+                    ? "Blocked: waiting for directory-trust approval in this terminal"
+                    : undefined}
+                >
                   {agentStates[agent.id] === "running" && isActive(agent.id) && (
                     <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping" />
                   )}
                   <span className={`relative w-1.5 h-1.5 rounded-full ${
-                    agentStates[agent.id] === "running" ? "bg-accent"
+                    agentStates[agent.id] === "blocked" ? "bg-warning"
+                      : agentStates[agent.id] === "running" ? "bg-accent"
                       : agentStates[agent.id] === "error" ? "bg-error"
                       : "bg-text-muted"
                   }`} />
@@ -159,16 +165,28 @@ export default function TerminalGrid({
                     the ticket's "minimal aesthetic" constraint. */}
                 <span
                   className={`text-[11px] uppercase tracking-wider ${
-                    agentStates[agent.id] === "running" && isActive(agent.id)
+                    agentStates[agent.id] === "blocked" ? "text-warning"
+                      : agentStates[agent.id] === "running" && isActive(agent.id)
                       ? "text-accent animate-name-shimmer"
                       : "text-text-muted"
                   }`}
                 >
                   {agent.label}
                 </span>
+                {agentStates[agent.id] === "blocked" && (
+                  <span
+                    className="text-[10px] text-warning normal-case tracking-normal"
+                    title="Approve the directory-trust prompt in this terminal to make the agent ready"
+                  >
+                    ⚠ trust needed
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
-                {agentStates[agent.id] !== "running" && (
+                {/* #111: "blocked" means the PTY is alive (waiting at a
+                    trust gate), so treat it like running for controls —
+                    don't offer Start (would duplicate), do offer Stop. */}
+                {agentStates[agent.id] !== "running" && agentStates[agent.id] !== "blocked" && (
                   <button
                     onClick={() => {
                       fetch(`/api/agents?project=${encodeURIComponent(projectId)}&agent=${encodeURIComponent(agent.id)}&action=start`, { method: "POST" })
@@ -180,7 +198,7 @@ export default function TerminalGrid({
                     title="Start"
                   >▶</button>
                 )}
-                {agentStates[agent.id] === "running" && (
+                {(agentStates[agent.id] === "running" || agentStates[agent.id] === "blocked") && (
                   <button
                     onClick={() => {
                       fetch(`/api/agents?project=${encodeURIComponent(projectId)}&agent=${encodeURIComponent(agent.id)}&action=stop`, { method: "POST" })
