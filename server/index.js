@@ -13,6 +13,7 @@ const { dispatchToAgentPTY, cleanupSession: cleanupPtyDispatcher } = require("./
 const { runAcMigration } = require("./migrate-ac");
 const { resolveButlerCwd, ensureButlerInstructions } = require("./butler-instructions");
 const { detectsClaudeTrustPrompt } = require("./butler-trust");
+const { detectsCodexTrustPrompt, ensureCodexTrusted } = require("./codex-trust");
 
 const net = require("net");
 const config = readConfig();
@@ -62,6 +63,15 @@ function safeWrite(term, data) {
     if (err.code === "EIO") return false;
     throw err;
   }
+}
+
+// #111: input to an agent PTY answers/dismisses any pending directory-trust
+// gate, so clear the blocked flag immediately and forget the gate text so a
+// stale prompt in the tail can't re-trigger a block on the next output chunk.
+function clearAgentTrustBlock(session) {
+  if (!session) return;
+  session.trustBlocked = false;
+  session._trustTail = "";
 }
 
 // --- CLI status detection ---
@@ -458,6 +468,19 @@ async function spawnAgentPty(project, agent, opts = {}) {
   const command = resolveAgentCommand(project, agent) || (process.env.SHELL || "/bin/zsh");
   const extraEnv = buildAgentEnv(project, agent);
 
+  // #111: pre-trust the worktree for Codex agents on every spawn (idempotent)
+  // so the "Do you trust the contents of this directory?" gate never silently
+  // blocks the agent — covers existing projects and restarts, not just fresh
+  // setup. Safe noninteractive path: records the dir in ~/.codex/config.toml.
+  const cliBase = command.split("/").pop().split(" ")[0];
+  if (cliBase === "codex") {
+    try {
+      ensureCodexTrusted(cwd);
+    } catch (err) {
+      console.warn(`[agent] codex pre-trust failed for ${key}: ${err.message}`);
+    }
+  }
+
   try {
     // #565: buildAgentArgs is inside try-catch so registration failures
     // cannot crash the server as an unhandled rejection.
@@ -486,6 +509,11 @@ async function spawnAgentPty(project, agent, opts = {}) {
       // clients see the terminal state instead of a blank panel.
       // #538: scrollback is scrubbed of likely secrets before replay.
       scrollback: Buffer.alloc(0),
+      // #111: true while the most recent output is a directory-trust gate
+      // (Codex or Claude). Surfaced via /api/agents so the dashboard shows a
+      // "blocked" state instead of implying the agent is ready. We never
+      // auto-answer agents — pre-trust during setup is the safe path.
+      trustBlocked: false,
     };
     agentSessions.set(key, session);
 
@@ -497,12 +525,26 @@ async function spawnAgentPty(project, agent, opts = {}) {
     // This runs independently of WS — even when no client is connected,
     // the buffer accumulates so the next connect gets replay.
     const SCROLLBACK_SIZE = 64 * 1024;
+    // #111: recompute the trust-gate block from a SMALL recent-output tail on
+    // each chunk so it self-clears promptly once output scrolls past the gate.
+    // It is also cleared immediately when the operator answers (any input to
+    // the PTY — see the WS input + /write handlers), which resets the tail so
+    // a stale prompt can't re-trigger a block. The tail lives on the session
+    // so those handlers can reset it.
+    session._trustTail = "";
+    const TRUST_TAIL = 1500;
     term.onData((data) => {
       session.lastOutputAt = Date.now();
       const chunk = Buffer.from(data);
       session.scrollback = Buffer.concat([session.scrollback, chunk]);
       if (session.scrollback.length > SCROLLBACK_SIZE) {
         session.scrollback = session.scrollback.slice(-SCROLLBACK_SIZE);
+      }
+      session._trustTail = (session._trustTail + data).slice(-TRUST_TAIL);
+      const blocked = detectsCodexTrustPrompt(session._trustTail) || detectsClaudeTrustPrompt(session._trustTail);
+      if (blocked !== session.trustBlocked) {
+        session.trustBlocked = blocked;
+        if (blocked) console.log(`[agent] ${key} blocked at directory-trust gate — operator action needed`);
       }
     });
 
@@ -554,7 +596,13 @@ async function stopAgentSession(key) {
 app.get("/api/agents", (_req, res) => {
   const agents = {};
   for (const [key, session] of agentSessions) {
-    agents[key] = { state: session.state, error: session.error || null };
+    agents[key] = {
+      state: session.state,
+      error: session.error || null,
+      // #111: surface a pending directory-trust gate so the dashboard can
+      // show "blocked" instead of implying the agent is ready.
+      blocked: session.state === "running" && !!session.trustBlocked ? "trust" : null,
+    };
   }
   res.json(agents);
 });
@@ -792,6 +840,7 @@ app.post("/api/agents/:project/:agent/write", (req, res) => {
   }
 
   try {
+    clearAgentTrustBlock(session); // #111: input answers any pending trust gate
     session.term.write(text);
     res.json({ ok: true });
   } catch (err) {
@@ -1539,6 +1588,7 @@ wss.on("connection:terminal", async (ws, req) => {
         return;
       }
     } catch {}
+    clearAgentTrustBlock(session); // #111: operator keystroke answers the gate
     safeWrite(session.term, str);
   });
 

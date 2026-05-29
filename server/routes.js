@@ -15,6 +15,7 @@ const telegramBridge = require("./bridges/telegram");
 const discordBridge = require("./bridges/discord");
 const { parsePlanningQueue, statusToProgress, statusToLabel, resolveEffectiveStatus, summarizeBatch } = require("./planning-queue");
 const { sendPlanningPulse, PLANNING_PULSE_MESSAGE } = require("./planning-loop-pulse");
+const { ensureCodexTrusted } = require("./codex-trust");
 const { discoverArtifacts, readArtifactContent, isPathSafe, getAllowedRoots } = require("./artifact-preview");
 
 const router = express.Router();
@@ -2413,7 +2414,8 @@ router.post("/api/setup", (req, res) => {
       // Running `claude -p` in a directory auto-trusts it for future sessions,
       // preventing the interactive "Do you trust this directory?" prompt.
       const agentBackends = body.backends || {};
-      const claudeAgents = agents.filter((a) => (agentBackends[a] || "claude") === "claude");
+      const cliBase = (a) => (agentBackends[a] || "claude").split("/").pop().split(" ")[0];
+      const claudeAgents = agents.filter((a) => cliBase(a) === "claude");
       if (claudeAgents.length > 0) {
         const claudePath = exec("which", ["claude"]);
         if (claudePath.ok) {
@@ -2422,6 +2424,21 @@ router.post("/api/setup", (req, res) => {
             if (!fs.existsSync(wtDir)) continue;
             exec("claude", ["-p", "echo ok"], { cwd: wtDir, timeout: 15000, stdio: "pipe" });
           }
+        }
+      }
+      // #111: Pre-trust worktree directories for Codex agents by recording
+      // them as trusted projects in ~/.codex/config.toml — the safe,
+      // noninteractive path that prevents the "Do you trust the contents of
+      // this directory?" gate from silently blocking HEAD/RE1.
+      const codexAgents = agents.filter((a) => cliBase(a) === "codex");
+      for (const agent of codexAgents) {
+        const wtDir = path.join(parentDir, `${projectName}-${agent}`);
+        if (!fs.existsSync(wtDir)) continue;
+        try {
+          const r = ensureCodexTrusted(wtDir);
+          created.push(`${agent} (codex pre-trusted: ${r.action})`);
+        } catch (err) {
+          errors.push(`${agent}: codex pre-trust failed: ${err.message}`);
         }
       }
       return res.json({ ok: errors.length === 0, created, errors });
