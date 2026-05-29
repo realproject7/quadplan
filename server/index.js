@@ -12,6 +12,7 @@ const fileChat = require("./file-chat");
 const { dispatchToAgentPTY, cleanupSession: cleanupPtyDispatcher } = require("./pty-dispatcher");
 const { runAcMigration } = require("./migrate-ac");
 const { resolveButlerCwd, ensureButlerInstructions } = require("./butler-instructions");
+const { detectsClaudeTrustPrompt } = require("./butler-trust");
 
 const net = require("net");
 const config = readConfig();
@@ -821,10 +822,15 @@ function spawnButlerPty() {
       args.push(...flags);
     }
 
-    // Pre-trust the Butler working directory to avoid blocking trust prompt
+    // Pre-trust the Butler working directory to avoid blocking trust prompt.
+    // #107: track whether pre-trust succeeded — when it does, the directory
+    // is already trusted and we must NOT attach any trust-prompt auto-answer
+    // (that's what injected a phantom "1" into the live session).
+    let preTrustOk = false;
     if (command === "claude") {
       try {
         execFileSync("claude", ["-p", "echo ok"], { cwd: docsDir, timeout: 15000, stdio: "pipe" });
+        preTrustOk = true;
       } catch {}
     }
 
@@ -898,21 +904,33 @@ function spawnButlerPty() {
       }
     });
 
-    // Auto-answer Claude's trust prompt if it appears within the first 10s
-    if (command === "claude") {
+    // #107: Only auto-answer the REAL Claude folder-trust gate, and only as
+    // a fallback when pre-trust did not already trust the directory. If
+    // pre-trust succeeded there is no gate to answer, so we attach nothing —
+    // eliminating any chance of injecting a stray "1" into the live session.
+    //
+    // The detector matches the unique trust-gate question plus its
+    // "Yes, proceed" option against an accumulated, ANSI-stripped buffer, so
+    // arbitrary early output (a "1." list, "Yes," in prose, the word "trust")
+    // can never trigger an auto-answer.
+    if (command === "claude" && !preTrustOk) {
+      console.log("[butler] pre-trust unconfirmed — watching for the Claude trust gate (10s)");
       let trustHandled = false;
+      let trustBuf = "";
       const trustListener = term.onData((data) => {
         if (trustHandled) return;
-        if (data.includes("trust") || data.includes("Yes,") || data.includes("1.")) {
+        trustBuf = (trustBuf + data).slice(-8192);
+        if (detectsClaudeTrustPrompt(trustBuf)) {
+          trustHandled = true; // claim immediately so we answer at most once
+          console.log("[butler] Claude trust gate detected — selecting 'Yes, proceed'");
           setTimeout(() => {
-            if (!trustHandled && butlerSession.term === term) {
-              safeWrite(term, "1\r");
-              trustHandled = true;
-            }
+            if (butlerSession.term === term) safeWrite(term, "1\r");
           }, 500);
         }
       });
       setTimeout(() => { trustListener.dispose(); trustHandled = true; }, 10000);
+    } else if (command === "claude") {
+      console.log("[butler] directory pre-trusted — no trust-prompt auto-answer attached");
     }
 
     term.onExit(({ exitCode }) => {
