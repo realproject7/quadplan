@@ -149,3 +149,19 @@ test("the shipped Butler seed carries the current marker", () => {
   const content = fs.readFileSync(shipped, "utf8");
   assert.ok(isCurrentSeed(content), "shipped seed must contain the current marker");
 });
+
+// #110: the seed must forbid Butler from auto-opening a browser after
+// creating a project, and must direct the operator to open it themselves.
+test("the shipped Butler seed forbids auto-opening a browser (#110)", () => {
+  const shipped = path.join(__dirname, "..", "templates", "seeds", "butler.CLAUDE.md");
+  const content = fs.readFileSync(shipped, "utf8");
+  const lower = content.toLowerCase();
+  // explicit prohibition on browser-launching commands
+  assert.match(content, /Never open browsers/i);
+  for (const cmd of ["open", "xdg-open", "osascript"]) {
+    assert.ok(lower.includes(cmd), `seed should name the forbidden command "${cmd}"`);
+  }
+  // operator-driven open instruction (refresh dashboard / sidebar)
+  assert.match(lower, /refresh the quadplan dashboard/);
+  assert.match(lower, /sidebar/);
+});

@@ -24,7 +24,7 @@ const os = require("os");
 // the seed's meaning changes so existing installs get re-seeded (with a
 // backup) instead of continuing to run an older managed version.
 const SEED_MARKER_PREFIX = "<!-- quadplan-butler-seed:";
-const SEED_VERSION = "v1";
+const SEED_VERSION = "v2";
 const SEED_MARKER = `${SEED_MARKER_PREFIX} ${SEED_VERSION} -->`;
 
 // QuadPlan-specific default. Deliberately not `~/docs/` (see header).
