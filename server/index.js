@@ -11,6 +11,7 @@ const routes = require("./routes");
 const fileChat = require("./file-chat");
 const { dispatchToAgentPTY, cleanupSession: cleanupPtyDispatcher } = require("./pty-dispatcher");
 const { runAcMigration } = require("./migrate-ac");
+const { resolveButlerCwd, ensureButlerInstructions } = require("./butler-instructions");
 
 const net = require("net");
 const config = readConfig();
@@ -805,8 +806,9 @@ function spawnButlerPty() {
   try {
     const cfg = readConfig();
     const butlerCfg = cfg.butler || {};
-    const cwdRaw = butlerCfg.cwd || "~/docs/";
-    const docsDir = cwdRaw.startsWith("~/") ? path.join(os.homedir(), cwdRaw.slice(2)) : cwdRaw;
+    // #108: default to a QuadPlan-specific dir (~/.quadplan/butler) so a
+    // stale QuadWork ~/docs/CLAUDE.md cannot shadow Butler's instructions.
+    const docsDir = resolveButlerCwd(butlerCfg.cwd);
     if (!fs.existsSync(docsDir)) {
       fs.mkdirSync(docsDir, { recursive: true, mode: 0o700 });
     }
@@ -826,22 +828,20 @@ function spawnButlerPty() {
       } catch {}
     }
 
+    // #108: always ensure the managed QuadPlan Butler seed is active.
+    // Stale/QuadWork CLAUDE.md is backed up before being replaced so
+    // operator notes are never lost without a trail.
     const seedPath = path.join(__dirname, "..", "templates", "seeds", "butler.CLAUDE.md");
-    const claudePath = path.join(docsDir, "CLAUDE.md");
-    if (!fs.existsSync(claudePath)) {
-      const legacyPath = path.join(docsDir, "AGENTS.md");
-      if (fs.existsSync(legacyPath)) {
-        fs.copyFileSync(legacyPath, claudePath);
-      } else if (fs.existsSync(seedPath)) {
-        fs.copyFileSync(seedPath, claudePath);
-      }
+    const seedResult = ensureButlerInstructions(docsDir, seedPath);
+    if (seedResult.backup) {
+      console.log(`[butler] backed up prior CLAUDE.md -> ${seedResult.backup}`);
     }
 
-    // #635: seed README.md explaining ~/docs/ folder purpose
+    // #635: seed README.md explaining the Butler working-directory purpose
     const readmePath = path.join(docsDir, "README.md");
     if (!fs.existsSync(readmePath)) {
       fs.writeFileSync(readmePath, [
-        "# ~/docs/",
+        "# QuadPlan Butler workspace",
         "",
         "Butler's working directory — cross-project operator notes and artifacts.",
         "Not git-tracked; operator-local.",
@@ -866,6 +866,14 @@ function spawnButlerPty() {
       env: { ...process.env },
     });
 
+    // #108: surface the active instruction file/cwd in the terminal so the
+    // operator can confirm Butler loaded the QuadPlan seed (not stale docs).
+    const instructionBanner =
+      `\x1b[2m[butler] cwd: ${docsDir}\r\n` +
+      `[butler] instructions: ${seedResult.path} (${seedResult.action})` +
+      (seedResult.backup ? `\r\n[butler] backed up prior instructions: ${seedResult.backup}` : "") +
+      `\x1b[0m\r\n`;
+
     butlerSession = {
       term,
       viewers: new Set(),
@@ -873,9 +881,12 @@ function spawnButlerPty() {
       lastDims: null,
       state: "running",
       error: null,
-      scrollback: Buffer.alloc(0),
+      scrollback: Buffer.from(instructionBanner),
       command,
       model: butlerCfg.model || "",
+      cwd: docsDir,
+      instructionFile: seedResult.path,
+      instructionAction: seedResult.action,
     };
 
     const SCROLLBACK_SIZE = 64 * 1024;
@@ -916,7 +927,7 @@ function spawnButlerPty() {
       }
     });
 
-    console.log(`[butler] spawned (PID: ${term.pid}, cwd: ${docsDir})`);
+    console.log(`[butler] spawned (PID: ${term.pid}, cwd: ${docsDir}, instructions: ${seedResult.path} [${seedResult.action}])`);
     return { ok: true, pid: term.pid };
   } catch (err) {
     butlerSession = { term: null, viewers: new Set(), viewerDims: new Map(), lastDims: null, state: "error", error: err.message, scrollback: Buffer.alloc(0) };
@@ -964,6 +975,9 @@ app.get("/api/butler/status", (_req, res) => {
     pid: butlerSession.term ? butlerSession.term.pid : null,
     command: running ? butlerSession.command : undefined,
     model: running ? butlerSession.model : undefined,
+    cwd: running ? butlerSession.cwd : undefined,
+    instructionFile: running ? butlerSession.instructionFile : undefined,
+    instructionAction: running ? butlerSession.instructionAction : undefined,
   });
 });
 
