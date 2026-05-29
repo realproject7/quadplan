@@ -1416,6 +1416,22 @@ app.use((req, res, next) => {
   }
 });
 
+// #109: API responses must be JSON, not Express's default HTML error
+// pages. Any unmatched /api/* route returns a JSON 404, and any error
+// thrown from an API handler returns a JSON 500 (matching the shape the
+// dashboard and agent shims expect).
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(err.status || 500).json({ error: err.message || "Internal server error" });
+  }
+  return next(err);
+});
+
 // --- #538: PTY output secret scrubbing (extracted to scrub-secrets.js) ---
 const { scrubSecrets, scrubScrollback } = require("./scrub-secrets");
 

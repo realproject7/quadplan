@@ -137,6 +137,15 @@ function shutdownProject(projectId) {
   projectState.delete(projectId);
 }
 
+// #109: True when the running server holds live chat runtime for this
+// project (initProject has populated its in-memory state). Used to drive
+// on-demand initialization so projects registered while the server is
+// running (CLI, manual config edit, Butler) can chat without a restart.
+function isInitialized(projectId) {
+  const state = projectState.get(projectId);
+  return !!state && state.nextId !== null;
+}
+
 function appendMessage(projectId, { sender, channel = "general", text, type = "message" }, _skipLoopGuard = false) {
   const state = getState(projectId);
   if (state.nextId === null) {
@@ -301,6 +310,7 @@ function validateShimToken(projectId, agentId, token) {
 module.exports = {
   initProject,
   shutdownProject,
+  isInitialized,
   appendMessage,
   readMessages,
   getNextId,

@@ -300,6 +300,35 @@ function getProjectChatMode(projectId) {
   return project?.chat_mode === "ac" ? "ac" : "file";
 }
 
+// #109: Ensure the running server holds live file-chat runtime for a
+// project. Server startup initializes file-chat for projects already in
+// config, and the add-config route initializes newly-registered ones —
+// but a project can also appear in config via the CLI, a manual config
+// edit, or Butler editing config.json directly, leaving the live server
+// without chat runtime (POST /api/chat then 500s with "not initialized").
+// This lazily initializes such projects on first use.
+//
+// Returns:
+//   "ready"   — live file-chat runtime is available
+//   "missing" — no such project in config
+//   "ac"      — project uses legacy AgentChattr mode (not file-chat)
+//   "error"   — project is a file-chat project but init failed
+function ensureFileChatReady(projectId) {
+  if (!projectId) return "missing";
+  if (fileChat.isInitialized(projectId)) return "ready";
+  const cfg = readConfigFile();
+  const project = cfg.projects?.find((p) => p.id === projectId);
+  if (!project) return "missing";
+  if (project.chat_mode === "ac") return "ac";
+  try {
+    fileChat.initProject(projectId);
+    return "ready";
+  } catch (err) {
+    console.error(`[chat] on-demand file-chat init failed for ${projectId}: ${err.message}`);
+    return "error";
+  }
+}
+
 function emitSystemMessage(projectId, text) {
   try {
     fileChat.appendMessage(projectId, { sender: "system", type: "system", text });
@@ -308,17 +337,27 @@ function emitSystemMessage(projectId, text) {
 
 router.get("/api/chat", (req, res) => {
   const projectId = req.query.project;
+  if (!projectId) return res.status(400).json({ error: "project required" });
 
-  const sinceId = Number(req.query.since_id) || Number(req.query.cursor) || 0;
-  const messages = fileChat.readMessages(projectId, {
-    since_id: sinceId,
-    limit: Number(req.query.limit) || 50,
-  });
-  const normalized = messages.map((m) => ({
-    ...m,
-    time: m.time || (m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : ""),
-  }));
-  return res.json(normalized);
+  try {
+    // Non-fatal: readMessages already falls back to disk for an
+    // uninitialized project, but initializing first populates the cache
+    // and shares the same code path as POST.
+    ensureFileChatReady(projectId);
+    const sinceId = Number(req.query.since_id) || Number(req.query.cursor) || 0;
+    const messages = fileChat.readMessages(projectId, {
+      since_id: sinceId,
+      limit: Number(req.query.limit) || 50,
+    });
+    const normalized = messages.map((m) => ({
+      ...m,
+      time: m.time || (m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : ""),
+    }));
+    return res.json(normalized);
+  } catch (err) {
+    console.error(`[chat] GET failed for ${projectId}: ${err.message}`);
+    return res.status(500).json({ error: "Failed to read chat", detail: err.message });
+  }
 });
 
 // #693: Auto-normalize bare agent names to @mentions in outbound messages.
@@ -752,6 +791,7 @@ router.post("/api/chat", (req, res) => {
   const projectId = req.query.project || req.body.project;
 
   const text = typeof req.body?.text === "string" ? req.body.text : "";
+  if (!projectId) return res.status(400).json({ error: "project required" });
   if (!text) return res.status(400).json({ error: "text required" });
   const shimSender = req.headers["x-chat-sender"];
   const shimToken = req.headers["x-chat-token"];
@@ -765,19 +805,36 @@ router.post("/api/chat", (req, res) => {
   } else if (bridgeSender && isLocalhost(req.ip)) {
     sender = bridgeSender;
   }
-  const msg = fileChat.appendMessage(projectId, {
-    sender,
-    text: normalizeMentions(text),
-    channel: req.body?.channel || "general",
-    type: "message",
-  });
-  // #717: loop guard — count agent hops, pause if threshold reached
-  const maxHops = getProjectMaxHops(projectId);
-  fileChat.checkLoopGuard(projectId, msg, maxHops);
-  if (!fileChat.isLoopGuardPaused(projectId)) {
-    if (_ptyDispatchCallback) _ptyDispatchCallback(projectId, msg);
+
+  // #109: lazily bring up file-chat runtime so projects registered while
+  // the server is running (CLI / manual edit / Butler) can chat without a
+  // restart, instead of 500ing with "not initialized".
+  const ready = ensureFileChatReady(projectId);
+  if (ready === "missing") {
+    return res.status(404).json({ error: `Unknown project: ${projectId}` });
   }
-  return res.json({ ok: true, message: msg });
+  if (ready === "error") {
+    return res.status(500).json({ error: `Could not initialize chat for project: ${projectId}` });
+  }
+
+  try {
+    const msg = fileChat.appendMessage(projectId, {
+      sender,
+      text: normalizeMentions(text),
+      channel: req.body?.channel || "general",
+      type: "message",
+    });
+    // #717: loop guard — count agent hops, pause if threshold reached
+    const maxHops = getProjectMaxHops(projectId);
+    fileChat.checkLoopGuard(projectId, msg, maxHops);
+    if (!fileChat.isLoopGuardPaused(projectId)) {
+      if (_ptyDispatchCallback) _ptyDispatchCallback(projectId, msg);
+    }
+    return res.json({ ok: true, message: msg });
+  } catch (err) {
+    console.error(`[chat] POST failed for ${projectId}: ${err.message}`);
+    return res.status(500).json({ error: "Failed to send message", detail: err.message });
+  }
 });
 
 // ─── Image upload (#466) ──────────────────────────────────────────────────
@@ -2511,6 +2568,15 @@ router.post("/api/setup", (req, res) => {
 
       seedProjectRuntime(id);
 
+      // #109: initialize live file-chat runtime now so the project can
+      // receive chat messages immediately, without a server restart.
+      // Matches QuadWork's setup flow, which calls initProject after the
+      // project is added to config.
+      const chatReady = ensureFileChatReady(id);
+      if (chatReady !== "ready") {
+        console.warn(`[setup] file-chat not ready for ${id} after add-config (status: ${chatReady})`);
+      }
+
       // Batch 25 / #204: seed the per-project OVERNIGHT-QUEUE.md at
       // ~/.quadplan/{id}/OVERNIGHT-QUEUE.md.
       writeOvernightQueueFileSafe(id, name || id, repo);
@@ -3061,6 +3127,8 @@ module.exports.getProjectChatMode = getProjectChatMode;
 module.exports.setPtyDispatchCallback = setPtyDispatchCallback;
 module.exports.seedProjectWorkspace = seedProjectWorkspace;
 module.exports.seedProjectRuntime = seedProjectRuntime;
+// #109: exposed for the on-demand file-chat init test.
+module.exports.ensureFileChatReady = ensureFileChatReady;
 module.exports.PROJECT_AGENTS = PROJECT_AGENTS;
 // #99: expose batch snapshot helpers for stale-cache invalidation tests.
 module.exports.resolveDisplayedBatch = resolveDisplayedBatch;
